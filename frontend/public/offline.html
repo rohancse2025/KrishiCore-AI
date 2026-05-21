@@ -1,47 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KisanCore AI - Offline</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline - Kisan Core</title>
   <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background: linear-gradient(135deg, #15803d 0%, #16a34a 100%);
-      color: white;
-      text-align: center;
-      padding: 20px;
-    }
-    .container {
-      max-width: 500px;
-    }
-    h1 { font-size: 3rem; margin: 0 0 1rem 0; }
-    p { font-size: 1.2rem; opacity: 0.9; margin: 0 0 2rem 0; }
-    button {
-      background: white;
-      color: #15803d;
-      border: none;
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover { background: #f0f0f0; }
+    body {font-family: Arial, Helvetica, sans-serif; text-align: center; padding: 2rem; background:#f0f4f8; color:#333;}
+    .card {background:#fff; padding:2rem; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1); max-width:400px; margin:2rem auto;}
+    a {color:#15803d; text-decoration:none; font-weight:bold;}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>📡</h1>
-    <h2>You're Offline</h2>
-    <p>KisanCore AI works offline! Most features are available using cached data.</p>
-    <p>Check your internet connection and try again.</p>
-    <button onclick="location.reload()">Retry Connection</button>
+  <div class="card">
+    <h1>You're offline</h1>
+    <p>The application is working in offline mode. All core features (crop recommendation, soil analysis, fertilizer advice and plant‑disease scan) use local logic.</p>
+    <p><a href="/">Reload app when connection returns</a></p>
   </div>
 </body>
 </html>

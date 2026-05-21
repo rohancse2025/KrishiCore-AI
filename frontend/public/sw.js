@@ -8,8 +8,7 @@ const APP_SHELL = [
 ];
 
 const MODEL_FILES = [
-  '/models/crop-recommender/model.json',
-  '/models/crop-recommender/weights.bin'
+  '/models/crop-recommender/model.json'
 ];
 
 const DB_NAME = 'kisancore-db';
