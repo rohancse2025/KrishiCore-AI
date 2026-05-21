@@ -98,7 +98,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <View style={styles.iconCircle}>
             <Ionicons name="leaf" size={60} color="#ffffff" />
           </View>
-          <Text style={styles.title}>KrishiNova AI</Text>
+          <Text style={styles.title}>KhrishiCore AI</Text>
           <Text style={styles.subtitle}>
             {lang === 'en'
               ? 'Empowering Indian Farmers with Smart AI & IoT'

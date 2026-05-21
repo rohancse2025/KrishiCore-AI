@@ -2,10 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Farmer } from '../types';
 
 const KEYS = {
-  FARMER_PROFILE: '@krishinova:farmer_profile',
-  AUTH_TOKEN: '@krishinova:auth_token',
-  APP_LANGUAGE: '@krishinova:language',
-  OFFLINE_SCAN_QUEUE: '@krishinova:offline_scans',
+  FARMER_PROFILE: '@khrishicore:farmer_profile',
+  AUTH_TOKEN: '@khrishicore:auth_token',
+  APP_LANGUAGE: '@khrishicore:language',
+  OFFLINE_SCAN_QUEUE: '@khrishicore:offline_scans',
 };
 
 export const localStore = {

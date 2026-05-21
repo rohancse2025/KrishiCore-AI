@@ -63,7 +63,7 @@ export const HomeScreen: React.FC = () => {
     acres: lang === 'en' ? 'acres' : 'एकड़',
     scanshortcut: lang === 'en' ? 'AI Disease Scan' : 'एआई रोग जांच',
     scanbtn: lang === 'en' ? 'Scan Now' : 'अभी स्कैन करें',
-    advisory: lang === 'en' ? 'KrishiNova AI Advisory' : 'कृषिनोवा एआई सलाह',
+    advisory: lang === 'en' ? 'KhrishiCore AI Advisory' : 'कृषिनोवा एआई सलाह',
     tipTitle: lang === 'en' ? 'Crop Care Tip' : 'फसल देखभाल टिप',
     tipText: lang === 'en' 
       ? 'High temperature expected. Irrigating your Rice crop in the early hours is recommended to minimize water loss.'

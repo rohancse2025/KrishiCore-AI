@@ -39,7 +39,7 @@ export const CropsScreen: React.FC = () => {
   const [humidity, setHumidity] = useState('70');
   const [ph, setPh] = useState('6.5');
   const [rainfall, setRainfall] = useState('150');
-  const [recommendation, setRecommendation] = useState<{ cropName: string; confidence: number; reason: string } | null>(null);
+  const [recommendation, setRecommendation] = useState<{ cropName: string; confidence: number; reason: string; offline?: boolean } | null>(null);
 
   // Fertilizer Calc State
   const [calcCrop, setCalcCrop] = useState('Wheat');
@@ -156,6 +156,7 @@ export const CropsScreen: React.FC = () => {
           cropName: result.crop_name,
           confidence: result.confidence,
           reason: result.reason,
+          offline: false
         });
       } else {
         throw new Error('OFFLINE_MODE');
@@ -193,7 +194,7 @@ export const CropsScreen: React.FC = () => {
         confidence = 0.95;
       }
 
-      setRecommendation({ cropName, confidence, reason });
+      setRecommendation({ cropName, confidence, reason, offline: true });
     } finally {
       setLoading(false);
     }
@@ -390,8 +391,15 @@ export const CropsScreen: React.FC = () => {
           {recommendation && (
             <View style={styles.resultCard}>
               <View style={styles.resultHeader}>
-                <Ionicons name="sparkles" size={20} color="#15803d" />
-                <Text style={styles.resultTitle}>Best Recommended Crop</Text>
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <Ionicons name="sparkles" size={20} color="#15803d" />
+                  <Text style={styles.resultTitle}>Best Recommended Crop</Text>
+                </View>
+                {recommendation.offline && (
+                  <View style={{ backgroundColor: '#fef08a', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#854d0e' }}>📱 Offline ML</Text>
+                  </View>
+                )}
               </View>
               <Text style={styles.resultCropName}>{recommendation.cropName}</Text>
               

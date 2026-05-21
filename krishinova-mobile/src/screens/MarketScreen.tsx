@@ -130,10 +130,10 @@ export const MarketScreen: React.FC = () => {
         </View>
 
         {/* Cache status info */}
-        {lastCachedTime && (
-          <View style={styles.cacheNotice}>
-            <Ionicons name="time-outline" size={14} color="#64748b" />
-            <Text style={styles.cacheNoticeText}>Rates Cached at: {lastCachedTime}</Text>
+        {!isOnline && lastCachedTime && (
+          <View style={[styles.cacheNotice, { backgroundColor: '#fff7ed', padding: 10, borderRadius: 8, marginTop: 12 }]}>
+            <Ionicons name="time-outline" size={14} color="#c2410c" />
+            <Text style={[styles.cacheNoticeText, { color: '#c2410c' }]}>Showing last cached mandi prices</Text>
           </View>
         )}
 

@@ -19,12 +19,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 export const IoTScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const [telemetry, setTelemetry] = useState({
-    temperature: 31.4,
-    humidity: 65,
-    soilMoisture: 45,
-    timestamp: new Date().toISOString(),
-  });
+  const [telemetry, setTelemetry] = useState<any>(null);
 
   // Manual Override Controller State
   const [autoMode, setAutoMode] = useState(true);
@@ -173,19 +168,39 @@ export const IoTScreen: React.FC = () => {
       <LoadingSpinner visible={loading} message="Refreshing IoT telemetry..." />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Sync header status banner */}
-        <View style={styles.syncHeader}>
-          <Text style={styles.lastUpdatedText}>
-            ⏱ Last Sync: {new Date(telemetry.timestamp).toLocaleTimeString()}
-          </Text>
-          <TouchableOpacity style={styles.refreshBtn} onPress={loadData}>
-            <Ionicons name="refresh" size={16} color="#15803d" />
-            <Text style={styles.refreshBtnText}>Fetch Live</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Offline Banner & Sync Header */}
+        {!isOnline && telemetry && (
+          <View style={[styles.syncHeader, { backgroundColor: '#fff7ed', padding: 10, borderRadius: 8, marginBottom: 16 }]}>
+            <Text style={{ color: '#c2410c', fontSize: 12, fontWeight: '700' }}>
+              📡 Offline — Showing last synced data from {new Date(telemetry.timestamp).toLocaleTimeString()}
+            </Text>
+          </View>
+        )}
+        
+        {!isOnline && !telemetry && (
+          <View style={[styles.syncHeader, { backgroundColor: '#f1f5f9', padding: 10, borderRadius: 8, marginBottom: 16 }]}>
+            <Text style={{ color: '#64748b', fontSize: 12, fontWeight: '700' }}>
+              No cached data. Connect to see readings.
+            </Text>
+          </View>
+        )}
+
+        {isOnline && telemetry && (
+          <View style={styles.syncHeader}>
+            <Text style={styles.lastUpdatedText}>
+              ⏱ Last Sync: {new Date(telemetry.timestamp).toLocaleTimeString()}
+            </Text>
+            <TouchableOpacity style={styles.refreshBtn} onPress={loadData}>
+              <Ionicons name="refresh" size={16} color="#15803d" />
+              <Text style={styles.refreshBtnText}>Fetch Live</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Neo Metrics Displays */}
-        <View style={styles.metricsGrid}>
+        {telemetry ? (
+          <>
+          <View style={styles.metricsGrid}>
           {/* Temperature */}
           <View style={styles.metricCard}>
             <View style={[styles.iconCircle, { backgroundColor: '#fee2e2' }]}>
@@ -223,6 +238,12 @@ export const IoTScreen: React.FC = () => {
             </Text>
           </View>
         </View>
+        </>
+        ) : (
+          <View style={[styles.fullWidthMetric, { justifyContent: 'center' }]}>
+            <Text style={styles.metricLabel}>Data unavailable</Text>
+          </View>
+        )}
 
         {/* Manual Override controls */}
         <View style={styles.controllerCard}>

@@ -36,7 +36,7 @@ export const ChatScreen: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      text: 'Namaste! 🙏 I am KrishiNova AI. Ask me anything about crop diseases, mandi prices, fertilizers, or meteorological farming advice.',
+      text: 'Namaste! 🙏 I am KhrishiCore AI Assistant. Ask me anything about crop diseases, mandi prices, fertilizers, or meteorological farming advice.',
       sender: 'ai',
       timestamp: new Date(),
     },
@@ -57,10 +57,6 @@ export const ChatScreen: React.FC = () => {
     if (!textToSend.trim()) return;
 
     await checkConnectivity();
-    if (!isOnline) {
-      Alert.alert('Offline Mode', 'AI Chat assistance requires internet connectivity.');
-      return;
-    }
 
     const userMsg: ChatMessage = {
       id: Math.random().toString(36).substring(7),
@@ -71,9 +67,34 @@ export const ChatScreen: React.FC = () => {
 
     setMessages((prev) => [...prev, userMsg]);
     setInputText('');
-    
-    // Auto scroll to bottom
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+
+    if (!isOnline) {
+      let reply = "I am in offline mode. Connect internet for AI responses. Common advice: Water crops early morning, check soil moisture before irrigating, use neem-based pesticides for pests.";
+      const lower = textToSend.toLowerCase();
+      if (lower.includes('water') || lower.includes('irrigation')) {
+        reply = "Offline Advice: Water crops early in the morning to reduce evaporation. Check soil moisture 2 inches deep before watering.";
+      } else if (lower.includes('disease') || lower.includes('pest')) {
+        reply = "Offline Advice: For common pests, spray neem oil mixed with water. For fungal diseases, ensure proper spacing between plants for airflow.";
+      } else if (lower.includes('weather')) {
+        reply = "Offline Advice: Unable to fetch live weather. Typically in this season, expect moderate humidity. Please check skies locally.";
+      }
+
+      const offlineMsg: ChatMessage = {
+        id: Math.random().toString(36).substring(7),
+        text: reply,
+        sender: 'ai',
+        timestamp: new Date(),
+      };
+      
+      setTimeout(() => {
+        setMessages((prev) => [...prev, offlineMsg]);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      }, 500);
+      return;
+    }
+
+
 
     setLoading(true);
     try {
@@ -170,26 +191,19 @@ export const ChatScreen: React.FC = () => {
 
       {/* Footer input controller */}
       <View style={styles.inputContainer}>
-        {isOnline ? (
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ask Agronomist AI..."
-              value={inputText}
-              onChangeText={setInputText}
-              onSubmitEditing={() => handleSendMessage(inputText)}
-              placeholderTextColor="#94a3b8"
-            />
-            <TouchableOpacity style={styles.sendBtn} onPress={() => handleSendMessage(inputText)}>
-              <Ionicons name="send" size={18} color="#ffffff" />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.lockedInputRow}>
-            <Ionicons name="lock-closed" size={16} color="#64748b" style={{ marginRight: 8 }} />
-            <Text style={styles.lockedText}>AI chatbot is locked offline</Text>
-          </View>
-        )}
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            placeholder={isOnline ? "Ask Agronomist AI..." : "Ask offline AI..."}
+            value={inputText}
+            onChangeText={setInputText}
+            onSubmitEditing={() => handleSendMessage(inputText)}
+            placeholderTextColor="#94a3b8"
+          />
+          <TouchableOpacity style={[styles.sendBtn, !isOnline && { backgroundColor: '#64748b' }]} onPress={() => handleSendMessage(inputText)}>
+            <Ionicons name="send" size={18} color="#ffffff" />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
