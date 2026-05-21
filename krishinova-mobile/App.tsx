@@ -103,7 +103,12 @@ export default function App() {
           setCanGoBack(navState.canGoBack);
         }}
         // Loading handlers
-        onLoadStart={() => setIsLoading(true)}
+        onLoadProgress={({ nativeEvent }) => {
+          // If the page is fully loaded, hide the loading screen
+          if (nativeEvent.progress === 1) {
+            setIsLoading(false);
+          }
+        }}
         onLoadEnd={() => setIsLoading(false)}
         onError={() => {
           setHasError(true);
