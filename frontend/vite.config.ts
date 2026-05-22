@@ -1,4 +1,5 @@
 
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -10,8 +11,8 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "Kisan Core",
-        short_name: "Kisan",
+        name: "KrishiCore AI",
+        short_name: "KrishiCore",
         description: "Smart agriculture assistant",
         theme_color: "#16a34a",
         icons: [

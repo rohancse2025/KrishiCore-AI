@@ -121,7 +121,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         
         # 2. Send Welcome Message
         welcome_msg = (
-            f"🌿 Welcome to KisanCore AI, {req.name}!\n\n"
+            f"🌿 Welcome to KrishiCore AI, {req.name}!\n\n"
             f"Your account is now active. You will receive smart alerts here for your farm.\n"
             f"Send 'STATUS' anytime to get live data from your sensors.\n\n"
             f"Happy Farming! 👨‍🌾🚜"

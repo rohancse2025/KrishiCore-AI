@@ -4,32 +4,34 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { useSensor } from '../../context/SensorContext';
 import SpeakButton from '../../components/SpeakButton';
 import CropSearchInput from '../../components/CropSearchInput';
-import { recommendCropOffline } from '../../services/offline-crop-rules';
+import { recommendCropsOffline } from '../../services/offline-crop-engine';
 import { API_BASE_URL } from '../../config';
+import { analyzeSoilOffline } from '../../data/soil-analysis-offline';
+import { calculateFertilizerOffline } from '../../data/fertilizer-offline';
 
 // Helper for farmer-friendly hints
 const getSliderHint = (name: string, value: number) => {
   if (name === "N") {
-    if (value < 20) return "⚠️ Too low — apply urea or compost";
-    if (value > 120) return "⚠️ Too high — reduce chemical fertilizer";
+    if (value < 20) return "âš ï¸ Too low â€” apply urea or compost";
+    if (value > 120) return "âš ï¸ Too high â€” reduce chemical fertilizer";
   } else if (name === "P") {
-    if (value < 15) return "⚠️ Too low — add DAP fertilizer";
-    if (value > 100) return "⚠️ Too high — skip phosphorus fertilizer";
+    if (value < 15) return "âš ï¸ Too low â€” add DAP fertilizer";
+    if (value > 100) return "âš ï¸ Too high â€” skip phosphorus fertilizer";
   } else if (name === "K") {
-    if (value < 20) return "⚠️ Too low — apply potash fertilizer";
-    if (value > 150) return "⚠️ Too high — reduce potash use";
+    if (value < 20) return "âš ï¸ Too low â€” apply potash fertilizer";
+    if (value > 150) return "âš ï¸ Too high â€” reduce potash use";
   } else if (name === "temperature") {
-    if (value < 10) return "⚠️ Too cold — consider greenhouse farming";
-    if (value > 40) return "⚠️ Too hot — use shade nets and extra irrigation";
+    if (value < 10) return "âš ï¸ Too cold â€” consider greenhouse farming";
+    if (value > 40) return "âš ï¸ Too hot â€” use shade nets and extra irrigation";
   } else if (name === "humidity") {
-    if (value < 30) return "⚠️ Too dry — increase irrigation frequency";
-    if (value > 90) return "⚠️ Very humid — watch out for fungal diseases";
+    if (value < 30) return "âš ï¸ Too dry â€” increase irrigation frequency";
+    if (value > 90) return "âš ï¸ Very humid â€” watch out for fungal diseases";
   } else if (name === "ph") {
-    if (value < 5.5) return "⚠️ Too acidic — add lime to soil";
-    if (value > 8) return "⚠️ Too alkaline — add sulfur or organic matter";
+    if (value < 5.5) return "âš ï¸ Too acidic â€” add lime to soil";
+    if (value > 8) return "âš ï¸ Too alkaline â€” add sulfur or organic matter";
   } else if (name === "rainfall") {
-    if (value < 30) return "⚠️ Very dry area — choose drought resistant crops";
-    if (value > 250) return "⚠️ Very wet area — ensure proper drainage";
+    if (value < 30) return "âš ï¸ Very dry area â€” choose drought resistant crops";
+    if (value > 250) return "âš ï¸ Very wet area â€” ensure proper drainage";
   }
   return null;
 };
@@ -116,7 +118,7 @@ export default function CropsPage({ lang }: { lang: string }) {
         suggestion = "Your soil health looks excellent! Maintain organic matter levels and follow your regular crop rotation.";
       }
       
-      setSoilResult({ score: total, status, badge, suggestion: suggestion + " (📡 Offline Analysis)" });
+      setSoilResult({ score: total, status, badge, suggestion: suggestion + " (ðŸ“¡ Offline Analysis)" });
       setSoilLoading(false);
       return;
     }
@@ -156,11 +158,11 @@ export default function CropsPage({ lang }: { lang: string }) {
 
     // Check if offline
     if (!navigator.onLine) {
-      const offline = recommendCropOffline(inputs.N, inputs.P, inputs.K, inputs.temperature, inputs.humidity, inputs.ph, inputs.rainfall);
+      const offline = recommendCropsOffline(inputs.N, inputs.P, inputs.K, inputs.temperature, inputs.humidity, inputs.ph, inputs.rainfall);
       setTimeout(() => {
         setAiCrops([{
           name: offline.crop,
-          emoji: '🌱',
+          emoji: 'ðŸŒ±',
           reason: offline.reason,
           water_needed: inputs.rainfall > 150 ? 'High' : 'Moderate',
           best_season: 'Current',
@@ -194,16 +196,18 @@ export default function CropsPage({ lang }: { lang: string }) {
       setAiCrops(data.crops || []);
     } catch (err: any) {
       // Fallback to offline rule-based system on network error
-      const offline = recommendCropOffline(inputs.N, inputs.P, inputs.K, inputs.temperature, inputs.humidity, inputs.ph, inputs.rainfall);
-      setAiCrops([{
-        name: offline.crop,
-        emoji: '🌱',
-        reason: offline.reason,
-        water_needed: inputs.rainfall > 150 ? 'High' : 'Moderate',
-        best_season: 'Current',
-        profit_potential: 'High',
-        offline: true
-      }]);
+      const offline = recommendCropsOffline(inputs.N, inputs.P, inputs.K, inputs.temperature, inputs.humidity, inputs.ph, inputs.rainfall);
+      setAiCrops([
+        {
+          name: offline.crop,
+          emoji: 'ðŸŒ±',
+          reason: offline.reason,
+          water_needed: inputs.rainfall > 150 ? 'High' : 'Moderate',
+          best_season: 'Current',
+          profit_potential: 'High',
+          offline: true
+        }
+      ]);
       
       if (err.name === 'AbortError') {
         console.warn("Recommendation timed out, using offline fallback.");
@@ -220,7 +224,7 @@ export default function CropsPage({ lang }: { lang: string }) {
     { name: "N", label: "Nitrogen (N)", min: 0, max: 140, step: 1, hint: "Soil Health Card N value" },
     { name: "P", label: "Phosphorus (P)", min: 0, max: 140, step: 1, hint: "Soil Health Card P value" },
     { name: "K", label: "Potassium (K)", min: 0, max: 200, step: 1, hint: "Soil Health Card K value" },
-    { name: "temperature", label: "Temperature (°C)", min: 0, max: 50, step: 0.1, hint: "Auto-filled from ESP32" },
+    { name: "temperature", label: "Temperature (Â°C)", min: 0, max: 50, step: 0.1, hint: "Auto-filled from ESP32" },
     { name: "humidity", label: "Humidity (%)", min: 0, max: 100, step: 1, hint: "Auto-filled from ESP32" },
     { name: "ph", label: "Soil pH", min: 0, max: 14, step: 0.1, hint: "Optimal range: 6.0-7.5" },
     { name: "rainfall", label: "Rainfall (mm)", min: 0, max: 300, step: 1, hint: "Avg annual rainfall" },
@@ -245,74 +249,37 @@ export default function CropsPage({ lang }: { lang: string }) {
     setFertLoading(true);
     setFertResult(null);
 
-    // Offline check
-    if (!navigator.onLine) {
-      setTimeout(() => {
-        let advice = "";
-        const crop = fertInputs.crop.toLowerCase();
-        
-        // Base advice
-        if (fertInputs.N < 40) advice += `Apply 45kg Urea per acre for ${fertInputs.crop}. `;
-        if (fertInputs.P < 30) advice += `Add 50kg DAP at the time of sowing. `;
-        if (fertInputs.K < 40) advice += `Use 25kg MOP to improve grain/fruit weight. `;
-        
-        // Crop-specific additions
-        if (crop.includes('rice') || crop.includes('paddy')) {
-          advice += "Maintain 2-5cm water level during tillering stage. ";
-        } else if (crop.includes('wheat')) {
-          advice += "Apply second dose of Urea after first irrigation (21 days). ";
-        } else if (crop.includes('tomato') || crop.includes('potato')) {
-          advice += "High potassium is critical for these crops to avoid blight. ";
-        }
+    // Offline calculation (area assumed 1 acre)
+    const result = calculateFertilizerOffline(fertInputs.crop, 1);
+    const formatted = `Crop: ${result.crop}
+Area: ${result.area} acre(s)
+Total N: ${result.total_n} kg
+Total P: ${result.total_p} kg
+Total K: ${result.total_k} kg
+Estimated Cost: ${result.estimated_cost}
+Schedule:
+${result.schedule.map(s => `- ${s.stage}: ${s.timing} -> ${s.fertilizers.map(f => `${f.name} (${f.quantity})`).join(', ')}`).join('\n')}
+Tips: ${result.tips.join(', ')}
 
-        if (advice === "") advice = "Your current soil NPK levels are sufficient for this crop cycle. Add 2 tons of FYM/compost per acre to maintain long-term health.";
-        
-        setFertResult(advice + " (📡 Offline Calculation)");
-        setFertLoading(false);
-      }, 800);
-      return;
-    }
+(ðŸ“¡ Offline Calculation)`;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    const prompt = `I am growing ${fertInputs.crop} on ${fertInputs.soil} soil. My soil has Nitrogen: ${fertInputs.N} PPM, Phosphorus: ${fertInputs.P} PPM, Potassium: ${fertInputs.K} PPM. Give me exact fertilizer recommendations — which fertilizers to apply, how much per acre, and when to apply. Provide 3 short, professional sentences. Reply in English only.`;
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/chat/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt, history: [] }),
-        signal: controller.signal
-      });
-      if (res.status === 429) {
-        setFertResult("AI Limit Reached. Our models are busy—please try again in 5 minutes.");
-        return;
-      }
-      
-      const data = await res.json();
-      setFertResult(data.reply);
-    } catch (err: any) {
-      console.error("Fertilizer Advisor Error:", err);
-      // Offline fallback on error
-      let advice = "";
-      if (fertInputs.N < 30) advice += "Apply 50kg Urea per acre to boost nitrogen. ";
-      if (fertInputs.P < 25) advice += "Add 40kg DAP at sowing time. ";
-      if (fertInputs.K < 30) advice += "Apply 25kg MOP for better grain quality. ";
-      if (advice === "") advice = "Soil NPK levels look balanced for this crop. Maintain organic matter.";
-      
-      setFertResult(advice + " (Offline Fallback)");
-    } finally {
-      clearTimeout(timeoutId);
-      setFertLoading(false);
-    }
+    setFertResult(formatted);
+    setFertLoading(false);
   };
 
 
 
   return (
-    <div className="font-sans pb-4">
-      
+    <>
+      {isOnline ? (
+        <div className="w-full bg-green-50 text-green-700 p-2 text-center font-medium">
+          ðŸŒ Connected - Using AI recommendations
+        </div>
+      ) : (
+        <div className="w-full bg-gray-200 text-gray-800 p-2 text-center font-medium">
+          ðŸ’¾ Offline Mode - Using local data
+        </div>
+      )}
       {/* TABS HEADER */}
       <div className="flex border-b-2 border-gray-200 mb-6 sm:mb-8 gap-1 sm:gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
         <button 
@@ -320,30 +287,29 @@ export default function CropsPage({ lang }: { lang: string }) {
           className={`px-4 py-3 sm:px-6 sm:py-4 text-sm sm:text-base md:text-lg font-black transition-all border-t border-x rounded-t-xl relative -bottom-[2px] cursor-pointer whitespace-nowrap
             ${activeTab === 'crop' ? 'bg-green-50 border-green-600 text-green-600' : 'bg-transparent border-transparent text-gray-400 hover:text-green-600'}`}
         >
-          🌱 {t('crops_ml_tab')}
+          ðŸŒ± {t('crops_ml_tab')}
         </button>
         <button 
           onClick={() => setActiveTab('fertilizer')}
           className={`px-4 py-3 sm:px-6 sm:py-4 text-sm sm:text-base md:text-lg font-black transition-all border-t border-x rounded-t-xl relative -bottom-[2px] cursor-pointer whitespace-nowrap
             ${activeTab === 'fertilizer' ? 'bg-green-50 border-green-600 text-green-600' : 'bg-transparent border-transparent text-gray-400 hover:text-green-600'}`}
         >
-          🧪 Fertilizer
+          ðŸ§ª Fertilizer
         </button>
         <button 
           onClick={() => setActiveTab('soil')}
           className={`px-4 py-3 sm:px-6 sm:py-4 text-sm sm:text-base md:text-lg font-black transition-all border-t border-x rounded-t-xl relative -bottom-[2px] cursor-pointer whitespace-nowrap
             ${activeTab === 'soil' ? 'bg-green-50 border-green-600 text-green-600' : 'bg-transparent border-transparent text-gray-400 hover:text-green-600'}`}
         >
-          🔬 Soil Analysis
+          ðŸ”¬ Soil Analysis
         </button>
-
       </div>
 
       {activeTab === 'crop' && (
-        <div className="animate-fade-in">
+     
           {/* HERO HEADER */}
           <section className="bg-gradient-to-br from-green-800 to-green-600 rounded-2xl p-6 sm:p-8 md:p-10 text-white mb-8 shadow-lg shadow-green-700/20 text-center md:text-left">
-            <h1 className="m-0 mb-2.5 text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">🌾 {t('crops_title')}</h1>
+            <h1 className="m-0 mb-2.5 text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">ðŸŒ¾ {t('crops_title')}</h1>
             <p className="m-0 text-sm sm:text-base md:text-lg opacity-90 font-medium">{t('crops_subtitle')}</p>
           </section>
 
@@ -351,11 +317,11 @@ export default function CropsPage({ lang }: { lang: string }) {
             {/* Input Form Card */}
             <div className="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-gray-100 border-t-4 border-t-green-600">
               <h2 className="m-0 mb-6 text-lg sm:text-xl text-gray-900 font-black flex items-center gap-2">
-                📂 {t('crops_farm_params')}
+                ðŸ“‚ {t('crops_farm_params')}
               </h2>
               
               <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-4 text-sm text-blue-800 mb-8 leading-relaxed font-medium">
-                ℹ️ <strong>{t('crops_soil_note_title')}:</strong> {t('crops_soil_note_desc')}
+                â„¹ï¸ <strong>{t('crops_soil_note_title')}:</strong> {t('crops_soil_note_desc')}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-x-10 mb-8">
@@ -370,7 +336,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                             {(slider.name === "temperature" || slider.name === "humidity") && (
                               isOnline ? (
                                 <span className="ml-2 text-green-600 text-xs font-black uppercase flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
-                                  <span className="text-xs animate-pulse">🔴</span> {t('crops_live')}
+                                  <span className="text-xs animate-pulse">ðŸ”´</span> {t('crops_live')}
                                 </span>
                               ) : (
                                 <span className="ml-2 text-orange-600 text-xs font-black uppercase flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200">
@@ -415,135 +381,80 @@ export default function CropsPage({ lang }: { lang: string }) {
             {/* ERROR MESSAGE */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-red-800 text-center font-bold animate-shake">
-                ⚠️ {error}
+                âš ï¸ {error}
               </div>
             )}
 
             {/* RESULTS SECTION */}
-            {(isLoading || aiCrops.length > 0) && (
-              <div className="animate-fade-in">
-                <h2 className="text-xl text-gray-900 mb-6 text-center font-black tracking-tight">
-                  🤖 {t('crops_ai_results')}
-                </h2>
-                
-                {isLoading ? (
-                  <div className="flex justify-center p-12">
-                    <div className="w-12 h-12 border-5 border-gray-100 border-t-green-600 rounded-full animate-spin" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {aiCrops.slice(0, 3).map((crop, idx) => {
-                      const colors = [
-                        { b: "border-t-green-600", s: "shadow-green-600/10", t: "text-green-700" },
-                        { b: "border-t-blue-500", s: "shadow-blue-600/10", t: "text-blue-700" },
-                        { b: "border-t-amber-500", s: "shadow-amber-600/10", t: "text-amber-700" }
-                      ];
-                      const c = colors[idx] || colors[0];
-                      const profit = {
-                        Low: "bg-red-50 text-red-700",
-                        Medium: "bg-orange-50 text-orange-700",
-                        High: "bg-green-50 text-green-700"
-                      }[crop.profit_potential as 'Low'|'Medium'|'High'] || "bg-gray-50 text-gray-700";
-
-                      return (
-                        <div key={idx} className={`bg-white rounded-2xl p-6 sm:p-8 border border-gray-100 border-t-6 ${c.b} flex flex-col gap-3 sm:gap-4 text-center transition-all hover:-translate-y-1 hover:shadow-xl ${c.s}`}>
-                          <div className="flex justify-between items-start">
-                            <div className="text-4xl sm:text-5xl mt-2">{crop.emoji}</div>
-                            <SpeakButton text={`${crop.name}. ${crop.reason}`} lang={lang} />
-                          </div>
-                          <h3 className={`text-xl sm:text-2xl font-black ${c.t} tracking-tight m-0`}>{crop.name}</h3>
-                          {crop.offline && (
-                            <div className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-black uppercase self-center border border-amber-200">
-                              📡 Offline Mode
-                            </div>
-                          )}
-                          <p className="text-sm text-gray-500 italic m-0 leading-relaxed font-medium">{crop.reason}</p>
-                          
-                          <div className="flex flex-col gap-3 mt-4 text-left border-t border-gray-50 pt-5">
-                            <div className="flex items-center gap-2.5 text-sm sm:text-base font-medium text-gray-700">
-                              <span>💧</span> <span className="text-gray-400 font-bold">{t('crops_water')}:</span> {crop.water_needed}
-                            </div>
-                            <div className="flex items-center gap-2.5 text-sm sm:text-base font-medium text-gray-700">
-                              <span>📅</span> <span className="text-gray-400 font-bold">{t('crops_season')}:</span> {crop.best_season}
-                            </div>
-                            <div className="flex items-center gap-2.5 text-sm sm:text-base font-medium text-gray-700">
-                              <span>💰</span> <span className="text-gray-400 font-bold">{t('crops_profit')}:</span> 
-                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${profit}`}>
-                                {crop.profit_potential}
-                              </span>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => navigate('/chat', { state: { prefill: `Tell me more about growing ${crop.name} — best practices and fertilizer tips.` } })}
-                            className="mt-4 bg-green-50 text-green-600 border border-green-200 rounded-xl py-3 text-sm font-bold transition-colors hover:bg-green-100 cursor-pointer"
-                          >
-                            {t('crops_ask_expert')} →
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+{(isLoading || aiCrops.length > 0) && (
+  <div className="animate-fade-in">
+    <h2 className="text-xl text-gray-900 mb-6 text-center font-black tracking-tight">
+      🟢 {t('crops_ai_results')}
+    </h2>
+    {isLoading ? (
+      <div className="flex justify-center p-12">
+        <div className="w-12 h-12 border-5 border-gray-100 border-t-green-600 rounded-full animate-spin" />
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {aiCrops.slice(0, 5).map((crop, idx) => {
+          const colors = [
+            { b: "border-t-green-600", s: "shadow-green-600/10", t: "text-green-700" },
+            { b: "border-t-blue-500", s: "shadow-blue-600/10", t: "text-blue-700" },
+            { b: "border-t-amber-500", s: "shadow-amber-600/10", t: "text-amber-700" },
+            { b: "border-t-purple-500", s: "shadow-purple-600/10", t: "text-purple-700" },
+            { b: "border-t-pink-500", s: "shadow-pink-600/10", t: "text-pink-700" }
+          ];
+          const c = colors[idx] || colors[0];
+          const profit = {
+            Low: "bg-red-50 text-red-700",
+            Medium: "bg-orange-50 text-orange-700",
+            High: "bg-green-50 text-green-700"
+          }[crop.profit_potential as 'Low'|'Medium'|'High'] || "bg-gray-50 text-gray-700";
+          const confidence = crop.confidence !== undefined ? crop.confidence : 1;
+          return (
+            <div key={idx} className={`bg-white rounded-2xl p-6 sm:p-8 border border-gray-100 border-t-6 ${c.b} flex flex-col gap-3 sm:gap-4 text-center transition-all hover:-translate-y-1 hover:shadow-xl ${c.s}`}>
+              <div className="flex justify-between items-start">
+                <div className="text-4xl sm:text-5xl mt-2">{crop.emoji}</div>
+                <SpeakButton text={`${crop.name}. ${crop.reason}`} lang={lang} />
               </div>
-            )}
-            
-            {!isLoading && aiCrops.length === 0 && !error && (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl py-16 flex flex-col items-center justify-center text-center px-10">
-                <span className="text-5xl opacity-20 mb-4 block">🌾</span>
-                <p className="text-gray-500 font-bold text-lg max-w-md">
-                  {t('crops_empty_state')}
-                </p>
+              <h3 className={`text-xl sm:text-2xl font-black ${c.t} tracking-tight m-0`}>{crop.name}</h3>
+              {crop.offline && (
+                <div className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-black uppercase self-center border border-amber-200">
+                  ⚡ Offline Mode
+                </div>
+              )}
+              <p className="text-sm text-gray-500 italic m-0 leading-relaxed font-medium">{crop.reason}</p>
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div className="bg-green-500 h-2 rounded-full" style={{ width: `${confidence * 100}%` }} />
               </div>
-            )}
-          </div>
-
-          <h2 className="text-center mb-8 text-xl font-black text-gray-900 uppercase tracking-widest">{t('crops_steps_title')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { n: 1, t: t('crops_step1_title'), d: t('crops_step1_desc') },
-              { n: 2, t: t('crops_step2_title'), d: t('crops_step2_desc') },
-              { n: 3, t: t('crops_step3_title'), d: t('crops_step3_desc') }
-            ].map(step => (
-              <div key={step.n} className="bg-white p-8 rounded-2xl flex flex-col items-center text-center border border-gray-100 shadow-sm hover:border-green-300 transition-colors">
-                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xl font-black mb-4">{step.n}</div>
-                <h3 className="text-lg font-black text-gray-800 m-0 mb-1">{step.t}</h3>
-                <p className="text-gray-400 text-sm font-medium m-0">{step.d}</p>
+              <div className="flex justify-center gap-4 text-sm font-medium mb-2">
+                <span className={`px-2 py-1 rounded ${inputs.N >= 20 && inputs.N <= 120 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>N: {inputs.N}</span>
+                <span className={`px-2 py-1 rounded ${inputs.P >= 15 && inputs.P <= 100 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>P: {inputs.P}</span>
+                <span className={`px-2 py-1 rounded ${inputs.K >= 20 && inputs.K <= 150 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>K: {inputs.K}</span>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'fertilizer' && (
-        <div className="max-w-[700px] mx-auto flex flex-col gap-6 animate-fade-in">
-          <div className="bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-gray-100 flex flex-col gap-6">
-            <h2 className="m-0 text-xl text-gray-900 text-center font-black">
-              🧪 {t('crops_fert_title')}
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="flex flex-col gap-2">
-                <label className="font-bold text-gray-500 text-sm">{t('crops_target_crop')}</label>
-                <CropSearchInput
-                  value={fertInputs.crop}
-                  onChange={(val) => setFertInputs(prev => ({ ...prev, crop: val }))}
-                  placeholder="Search or type crop name..."
-                />
+              <div className="flex flex-col gap-3 mt-4 text-left border-t border-gray-50 pt-5">
+                <div className="flex items-center gap-2.5 text-sm sm:text-base font-medium text-gray-700">
+                  <span>💧</span> <span className="text-gray-400 font-bold">{t('crops_water')}:</span> {crop.water_needed}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm sm:text-base font-medium text-gray-700">
+                  <span>📅</span> <span className="text-gray-400 font-bold">{t('crops_season')}:</span> {crop.best_season}
+                </div>
+                <div className="flex items-center gap-2.5 text-sm sm:text-base font-medium text-gray-700">
+                  <span>💰</span> <span className="text-gray-400 font-bold">{t('crops_profit')}:</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${profit}`}>{crop.profit_potential}</span>
+                </div>
               </div>
-              
-              <div className="flex flex-col gap-2">
-                <label className="font-bold text-gray-500 text-sm">{t('crops_soil_texture')}</label>
-                <select 
-                  name="soil" value={fertInputs.soil} onChange={handleFertChange}
-                  className="p-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 font-bold outline-none focus-ring-green focus:bg-white transition-all"
-                >
-                  {['Sandy', 'Loamy', 'Clay', 'Black', 'Red'].map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
+              <button onClick={() => navigate('/chat', { state: { prefill: `Tell me more about growing ${crop.name} — best practices and fertilizer tips.` } })} className="mt-4 bg-green-50 text-green-600 border border-green-200 rounded-xl py-3 text-sm font-bold transition-colors hover:bg-green-100 cursor-pointer">
+                {t('crops_ask_expert')} →
+              </button>
             </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+)}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {[
@@ -581,7 +492,7 @@ export default function CropsPage({ lang }: { lang: string }) {
               <div className="mt-4 p-8 rounded-2xl border-2 border-green-600 bg-green-50 dark:bg-green-900/10 shadow-sm animate-fade-in hover-lift">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="m-0 text-2xl font-black text-green-800 dark:text-green-400 flex items-center gap-2">
-                    ✅ {t('crops_fert_result_title')}
+                    âœ… {t('crops_fert_result_title')}
                   </h3>
                   <SpeakButton text={fertResult} lang={lang} />
                 </div>
@@ -593,7 +504,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                     const tail = words.slice(2).join(" ");
                     return (
                       <div key={idx} className="flex gap-3 items-start bg-green-100/30 p-4 rounded-xl border-l-4 border-green-600 animate-fade-in">
-                        <span className="text-green-600 font-bold mt-1">●</span>
+                        <span className="text-green-600 font-bold mt-1">â—</span>
                         <p className="m-0 text-gray-700 dark:text-slate-300 text-lg font-medium leading-relaxed">
                           <span className="font-black text-gray-900 dark:text-white uppercase text-sm sm:text-base">{head}</span> {tail}{!sentence.endsWith(".") && "."}
                         </p>
@@ -604,7 +515,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                 
                 <div className="flex flex-col gap-4">
                   <div className="bg-amber-100/50 border-l-4 border-amber-500 p-4 rounded-lg flex gap-3 items-center">
-                    <span className="text-xl">⚠️</span>
+                    <span className="text-xl">âš ï¸</span>
                     <p className="m-0 text-amber-800 text-[13px] font-bold leading-relaxed">
                       Consult your district agri-officer for regional soil variations before application.
                     </p>
@@ -614,7 +525,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                     onClick={() => navigate('/chat', { state: { prefill: `I just got this fertilizer advice for my ${fertInputs.crop} crop: "${fertResult.substring(0, 50)}...". I have more questions about application techniques.` } })}
                     className="w-full bg-white text-green-600 border-2 border-green-600 rounded-xl py-3.5 text-base font-black hover:bg-green-50 transition-all ripple"
                   >
-                    💬 Ask More Questions
+                    ðŸ’¬ Ask More Questions
                   </button>
                 </div>
               </div>
@@ -623,11 +534,11 @@ export default function CropsPage({ lang }: { lang: string }) {
         </div>
       )}
 
-      {/* ── SOIL ANALYSIS TAB ─────────────────────────────── */}
+      {/* â”€â”€ SOIL ANALYSIS TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {activeTab === 'soil' && (
         <div className="max-w-[700px] mx-auto flex flex-col gap-6 animate-fade-in">
           <section className="bg-gradient-to-br from-amber-700 to-amber-500 rounded-2xl p-8 md:p-10 text-white shadow-lg">
-            <h1 className="m-0 mb-2 text-2xl md:text-3xl font-extrabold tracking-tight">🔬 Soil Analysis</h1>
+            <h1 className="m-0 mb-2 text-2xl md:text-3xl font-extrabold tracking-tight">ðŸ”¬ Soil Analysis</h1>
             <p className="m-0 text-base opacity-90">Enter your soil parameters to get a health report and AI action plan.</p>
           </section>
 
@@ -635,7 +546,7 @@ export default function CropsPage({ lang }: { lang: string }) {
             {/* Input Fields */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="flex flex-col gap-2">
-                <label className="font-bold text-gray-500 text-sm">Soil pH (4.0–9.0)</label>
+                <label className="font-bold text-gray-500 text-sm">Soil pH (4.0â€“9.0)</label>
                 <input
                   type="number" min="4" max="9" step="0.1"
                   value={soilInputs.ph}
@@ -644,7 +555,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="font-bold text-gray-500 text-sm">Nitrogen (mg/kg, 0–200)</label>
+                <label className="font-bold text-gray-500 text-sm">Nitrogen (mg/kg, 0â€“200)</label>
                 <input
                   type="number" min="0" max="200" step="1"
                   value={soilInputs.nitrogen}
@@ -653,7 +564,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="font-bold text-gray-500 text-sm">Soil Moisture % (0–100)</label>
+                <label className="font-bold text-gray-500 text-sm">Soil Moisture % (0â€“100)</label>
                 <input
                   type="number" min="0" max="100" step="1"
                   value={soilInputs.moisture}
@@ -710,7 +621,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                 <div className="bg-white rounded-xl p-4 border border-amber-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-black text-amber-700 uppercase tracking-widest flex items-center gap-1">
-                      🤖 AI Suggestion
+                      ðŸ¤– AI Suggestion
                     </span>
                     <SpeakButton
                       text={`Soil health is ${soilResult.status}. Score ${soilResult.score} out of 10. ${soilResult.suggestion}`}
@@ -737,7 +648,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                     }`}>
                       <p className="m-0 text-xs font-black uppercase tracking-wider opacity-60 mb-1">{item.label}</p>
                       <p className="m-0 text-lg font-black">{item.val}</p>
-                      <p className="m-0 text-xs font-bold mt-1">{item.ok ? '✓ Optimal' : '⚠ Adjust'}</p>
+                      <p className="m-0 text-xs font-bold mt-1">{item.ok ? 'âœ“ Optimal' : 'âš  Adjust'}</p>
                     </div>
                   ))}
                 </div>
@@ -747,7 +658,7 @@ export default function CropsPage({ lang }: { lang: string }) {
                   onClick={() => navigate('/chat', { state: { prefill: `My soil has pH ${soilInputs.ph}, Nitrogen ${soilInputs.nitrogen} mg/kg, Moisture ${soilInputs.moisture}%. Health score: ${soilResult.score}/10 (${soilResult.status}). What crops should I grow and what should I fix first?` } })}
                   className="w-full bg-white text-amber-600 border-2 border-amber-500 rounded-xl py-3 text-sm font-black hover:bg-amber-50 transition-all cursor-pointer"
                 >
-                  💬 Ask AI for Crop Recommendations →
+                  ðŸ’¬ Ask AI for Crop Recommendations â†’
                 </button>
               </div>
             )}
