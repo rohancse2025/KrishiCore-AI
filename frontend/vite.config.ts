@@ -57,7 +57,8 @@ export default defineConfig({
           }
         ],
         // Fallback to offline page for navigation requests when offline
-        navigationFallback: "/offline.html"
+        // Workbox expects `navigateFallback` (not `navigationFallback`)
+        navigateFallback: "/offline.html"
       }
     })
   ],
