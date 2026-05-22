@@ -1,7 +1,7 @@
 // This file runs crop recommendation inference IN THE BROWSER using a rule-based algorithm
 // instead of TensorFlow.js, matching the logic of the backend RandomForest model metadata.
 
-import { recommendCropsOffline } from './offline-crop-engine';
+import { recommendCropOffline } from './offline-crop-rules';
 
 export async function loadCropModel() {
   try {
@@ -43,8 +43,7 @@ export async function predictCropOffline(
     let score = 0;
     
     // We can extract an internal offline recommendation to gauge if it naturally matched
-    const offlineResults = recommendCropsOffline({ soilN: N, soilP: P, soilK: K, pH: ph, temperature, humidity, rainfall });
-    const offlineRec = offlineResults[0] || { crop: 'Rice' };
+    const offlineRec = recommendCropOffline(N, P, K, temperature, humidity, ph, rainfall);
     
     if (offlineRec.crop.includes(cropClass) || cropClass.includes(offlineRec.crop)) {
       // Direct strong match

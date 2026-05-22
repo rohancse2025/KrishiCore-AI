@@ -624,7 +624,7 @@ export const translations: Record<string, Record<string, string>> = {
     "app_footer_credit": "விவசாயிகளுக்காக ❤️ உடன் உருவாக்கப்பட்டது",
     "sync_success_title": "ஒத்திசைக்கப்பட்டது!",
     "sync_success_desc": "செயல்கள் சேவையகத்துடன் ஒத்திசைக்கப்பட்டன",
-    "chat_placeholder": "பண்ணை பற்றி KrishiCore உதவியாளரிடம் கேளுங்கள்...",
+    "chat_placeholder": "பண்ணை பற்றி KisanCore உதவியாளரிடம் கேளுங்கள்...",
     "chat_send": "அனுப்பு",
     "chat_thinking": "சிந்திக்கிறது...",
     "auth_login": "உள்நுழை",

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import SpeakButton from '../../components/SpeakButton';
 import { API_BASE_URL } from '../../config';
-import { DISEASE_SYMPTOM_DATABASE } from '../../data/disease-symptom-database';
 
 const MOCK_RESULT = {
   disease: "Tomato Early Blight",
@@ -34,12 +33,6 @@ export default function ScanPage({ lang }: { lang: string }) {
   const navigate = useNavigate();
   const { t } = useTranslation(lang);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [mode, setMode] = useState<'photo'|'symptom'>('photo');
-  // Symptom-check states
-  const [symptomCrop, setSymptomCrop] = useState<string>('Tomato');
-  const [symptomAnswers, setSymptomAnswers] = useState<Record<string, boolean>>({});
-  const [symptomResults, setSymptomResults] = useState<any[] | null>(null);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [error, setError] = useState<string | null>(null);
@@ -91,31 +84,6 @@ export default function ScanPage({ lang }: { lang: string }) {
     setResult(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const runSymptomCheck = () => {
-    setError(null);
-    setSymptomResults(null);
-    // find diseases for crop
-    const candidates = DISEASE_SYMPTOM_DATABASE.filter(d => d.crop.toLowerCase() === symptomCrop.toLowerCase());
-    if (candidates.length === 0) {
-      setError('No symptom rules found for selected crop.');
-      return;
-    }
-
-    const scored = candidates.map(d => {
-      const totalQ = d.questions.length || d.symptoms.length || 1;
-      let matches = 0;
-      // each question maps to answer key exactly as question text
-      (d.questions || d.symptoms).forEach(q => {
-        if (symptomAnswers[q]) matches += 1;
-      });
-      const matchRatio = matches / totalQ;
-      const score = Math.round(matchRatio * d.severity_score);
-      return { disease: d.disease, crop: d.crop, score, matches, totalQ, recommended_action: d.recommended_action };
-    }).sort((a,b)=> b.score - a.score);
-
-    setSymptomResults(scored);
   };
 
   const analyzeImage = async () => {
@@ -210,7 +178,7 @@ export default function ScanPage({ lang }: { lang: string }) {
 
   const handleShareWhatsApp = () => {
     if (!result) return;
-    const formattedText = `*🌿 KrishiCore AI Crop Scan*
+    const formattedText = `*🌿 KisanCore AI Crop Scan*
 *Disease:* 🦠 ${result.disease}
 *Confidence:* 🎯 ${result.confidence}%
 *Severity:* ⚠️ ${result.severity}
@@ -242,12 +210,6 @@ _Powered by KisanCore AI - Smart Agriculture Assistant_ 👨‍🌾🚜`;
         </p>
       </section>
 
-      {/* MODE TABS */}
-      <div className="flex gap-2 mb-6">
-        <button onClick={() => setMode('photo')} className={`px-4 py-2 rounded ${mode==='photo'? 'bg-green-700 text-white':'bg-gray-100'}`}>📷 Photo Scan</button>
-        <button onClick={() => setMode('symptom')} className={`px-4 py-2 rounded ${mode==='symptom'? 'bg-green-700 text-white':'bg-gray-100'}`}>🩺 Symptom Check</button>
-      </div>
-
       {/* ERROR MESSAGE */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-6 font-bold flex items-center gap-3 animate-fade-in">
@@ -260,250 +222,180 @@ _Powered by KisanCore AI - Smart Agriculture Assistant_ 👨‍🌾🚜`;
 
         {/* ===== LEFT COLUMN ===== */}
         <div className="flex flex-col gap-5">
-          {mode === 'photo' ? (
-            <>
-              {/* UPLOAD AREA */}
-              <div
-                onClick={() => !preview && fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={onDrop}
-                className={`border-2 border-dashed rounded-2xl min-h-[260px] flex flex-col items-center justify-center relative overflow-hidden transition-all p-6
-                  ${isDragging ? 'border-green-800 bg-green-100' : 'border-green-600 bg-green-50/50'}
-                  ${preview ? 'cursor-default' : 'cursor-pointer hover:bg-green-50'}`}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png, image/jpeg"
-                  className="hidden"
-                  onChange={onFileChange}
+
+          {/* UPLOAD AREA */}
+          <div
+            onClick={() => !preview && fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={onDrop}
+            className={`border-2 border-dashed rounded-2xl min-h-[260px] flex flex-col items-center justify-center relative overflow-hidden transition-all p-6
+              ${isDragging ? 'border-green-800 bg-green-100' : 'border-green-600 bg-green-50/50'}
+              ${preview ? 'cursor-default' : 'cursor-pointer hover:bg-green-50'}`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png, image/jpeg"
+              className="hidden"
+              onChange={onFileChange}
+            />
+
+            {preview ? (
+              <>
+                <img
+                  src={preview}
+                  alt="Selected plant"
+                  className="max-w-full max-h-[220px] rounded-lg object-contain shadow-sm"
                 />
+                <button
+                  onClick={(e) => { e.stopPropagation(); clearImage(); }}
+                  className="absolute top-3 right-3 bg-black/60 text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer transition-colors hover:bg-black/80"
+                >✕</button>
+              </>
+            ) : (
+              <>
+                <span className="text-5xl mb-3">📷</span>
+                <p className="m-0 mb-1.5 font-bold text-lg text-green-800">
+                  Click to upload or drag &amp; drop
+                </p>
+                <p className="m-0 text-sm text-gray-400 font-medium">
+                  Supports JPG, PNG — max 4MB
+                </p>
+              </>
+            )}
+          </div>
 
-                {preview ? (
-                  <>
-                    <img
-                      src={preview}
-                      alt="Selected plant"
-                      className="max-w-full max-h-[220px] rounded-lg object-contain shadow-sm"
-                    />
-                    <button
-                      onClick={(e) => { e.stopPropagation(); clearImage(); }}
-                      className="absolute top-3 right-3 bg-black/60 text-white border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer transition-colors hover:bg-black/80"
-                    >✕</button>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-5xl mb-3">📷</span>
-                    <p className="m-0 mb-1.5 font-bold text-lg text-green-800">
-                      Click to upload or drag &amp; drop
-                    </p>
-                    <p className="m-0 text-sm text-gray-400 font-medium">
-                      Supports JPG, PNG — max 4MB
-                    </p>
-                  </>
-                )}
-              </div>
+          {/* ANALYSE BUTTON */}
+          <button
+            onClick={analyzeImage}
+            disabled={!preview || isAnalyzing}
+            className={`w-full p-4 rounded-xl text-lg font-bold flex items-center justify-center gap-3 transition-all shadow-lg ripple
+               ${!preview || isAnalyzing ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 text-white cursor-pointer hover:bg-gray-800 active:scale-95'}`}
+          >
+            {isAnalyzing ? (
+              <>
+                <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                {t('scan_analyzing')}...
+              </>
+            ) : t('scan_take_photo')}
+          </button>
 
-              {/* ANALYSE BUTTON */}
-              <button
-                onClick={analyzeImage}
-                disabled={!preview || isAnalyzing}
-                className={`w-full p-4 rounded-xl text-lg font-bold flex items-center justify-center gap-3 transition-all shadow-lg ripple
-                   ${!preview || isAnalyzing ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 text-white cursor-pointer hover:bg-gray-800 active:scale-95'}`}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                    {t('scan_analyzing')}...
-                  </>
-                ) : t('scan_take_photo')}
-              </button>
-
-              {/* TIPS CARD */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="m-0 mb-4 text-xl text-gray-900 font-bold">
-                  💡 Tips for Better Results
-                </h3>
-                <ul className="m-0 p-0 list-none flex flex-col gap-3">
-                  {TIPS.map((tip, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-gray-600 leading-relaxed font-medium">
-                      <span className="text-green-600 font-bold flex-shrink-0">✓</span>
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                <h3 className="m-0 mb-4 text-xl text-gray-900 font-bold">🩺 Symptom Check (Offline)</h3>
-                <div className="mb-4">
-                  <label className="block text-sm font-bold text-gray-600">Select Crop</label>
-                  <select value={symptomCrop} onChange={e => setSymptomCrop(e.target.value)} className="mt-2 p-3 rounded-xl border border-gray-200 w-full">
-                    {[...new Set(DISEASE_SYMPTOM_DATABASE.map(d => d.crop))].map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-bold text-gray-600 mb-2">Questions</label>
-                  <div className="flex flex-col gap-3">
-                    {(() => {
-                      const rules = DISEASE_SYMPTOM_DATABASE.filter(d => d.crop.toLowerCase() === symptomCrop.toLowerCase());
-                      const questions = Array.from(new Set(rules.flatMap(r => r.questions.length ? r.questions : r.symptoms)));
-                      if (questions.length === 0) return <div className="text-sm text-gray-500">No questions available for this crop.</div>;
-                      return questions.map(q => (
-                        <div key={q} className="flex items-center justify-between gap-3">
-                          <div className="text-sm text-gray-700">{q}</div>
-                          <div className="flex gap-2">
-                            <button onClick={() => setSymptomAnswers(a=>({...a,[q]:true}))} className={`px-3 py-1 rounded ${symptomAnswers[q]? 'bg-green-600 text-white':'bg-gray-100'}`}>Yes</button>
-                            <button onClick={() => setSymptomAnswers(a=>({...a,[q]:false}))} className={`px-3 py-1 rounded ${symptomAnswers[q]===false? 'bg-red-600 text-white':'bg-gray-100'}`}>No</button>
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button onClick={runSymptomCheck} className="px-4 py-3 bg-green-600 text-white rounded-xl">Run Symptom Check</button>
-                  <button onClick={() => { setSymptomAnswers({}); setSymptomResults(null); }} className="px-4 py-3 bg-gray-100 rounded-xl">Reset</button>
-                </div>
-              </div>
-            </>
-          )}
+          {/* TIPS CARD */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 className="m-0 mb-4 text-xl text-gray-900 font-bold">
+              💡 Tips for Better Results
+            </h3>
+            <ul className="m-0 p-0 list-none flex flex-col gap-3">
+              {TIPS.map((tip, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-gray-600 leading-relaxed font-medium">
+                  <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         {/* ===== RIGHT COLUMN ===== */}
         <div>
-          {mode === 'symptom' ? (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[320px]">
-              <h3 className="text-lg font-black mb-4">Symptom Check Results</h3>
-              {!symptomResults ? (
-                <div className="text-sm text-gray-500">Run the symptom check to see likely diseases and recommended actions.</div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {symptomResults.map((r, i) => (
-                    <div key={i} className="p-3 border rounded-md">
-                      <div className="flex justify-between items-center">
-                        <div className="font-bold">{r.disease}</div>
-                        <div className="text-sm text-gray-600 font-black">Score: {r.score}</div>
-                      </div>
-                      <div className="text-xs text-gray-500">Matches: {r.matches}/{r.totalQ}</div>
-                      <div className="mt-2 text-sm">{r.recommended_action}</div>
-                    </div>
-                  ))}
+          {!result && !isAnalyzing ? (
+            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-15 flex flex-col items-center justify-center min-h-[320px] text-center">
+              <span className="text-6xl opacity-30 mb-4">📷</span>
+              <h3 className="m-0 mb-2 text-gray-700 text-xl font-bold">
+                Your analysis results will appear here
+              </h3>
+              <p className="m-0 text-gray-400 font-medium">
+                Upload an image and click Analyse
+              </p>
+            </div>
+          ) : isAnalyzing ? (
+            <div className="bg-white rounded-2xl p-15 flex flex-col items-center justify-center min-h-[320px] shadow-sm border border-gray-100 text-center">
+              <div className="w-14 h-14 border-5 border-green-50 border-t-green-600 rounded-full animate-spin mb-5" />
+              <p className="m-0 text-green-600 font-extrabold text-lg">Analyzing your image...</p>
+              <p className="m-0 mt-2 text-gray-400 text-sm italic font-medium">Running disease detection model</p>
+            </div>
+          ) : result ? (
+            <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-200 overflow-hidden animate-fade-in-up">
+              {/* Disease Header */}
+              <div className="p-8 pb-6">
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="m-0 text-3xl font-black text-gray-900 tracking-tight leading-tight">
+                    {result.disease}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <SpeakButton text={`Detected ${result.disease}. Confidence ${result.confidence} percent. Severity ${result.severity}.`} lang={lang} />
+                    <span className="text-4xl">🔬</span>
+                  </div>
                 </div>
-              )}
-              <div className="mt-4 flex gap-2">
-                <button onClick={() => { setSymptomResults(null); setSymptomAnswers({}); }} className="px-4 py-2 bg-gray-100 rounded">Reset</button>
-                <button onClick={() => { if (symptomResults && symptomResults[0]) { const top = symptomResults[0]; navigator.sendBeacon && navigator.sendBeacon('/telemetry', JSON.stringify({ event: 'symptom_check', disease: top.disease })); } }} className="px-4 py-2 bg-green-600 text-white rounded">Log Result</button>
+
+                <div className="flex flex-wrap gap-2.5 mb-6">
+                  <span className="bg-green-100 text-green-800 py-1.5 px-4 rounded-full text-xs font-black uppercase tracking-wider border border-green-200">
+                    {result.confidence}% Confidence
+                  </span>
+                  <span className={`py-1.5 px-4 rounded-full text-xs font-black uppercase tracking-wider border ${severityBg(result.severity)} ${severityColor(result.severity)}`}>
+                    {result.severity} Severity
+                  </span>
+                </div>
+
+                <div className="mb-2 flex justify-between font-black text-[11px] text-gray-400 uppercase tracking-widest">
+                  <span>Detection Confidence</span>
+                  <span>{result.confidence}%</span>
+                </div>
+                <div className="h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner p-0.5">
+                  <div 
+                    className="h-full bg-green-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(22,163,74,0.5)]"
+                    style={{ width: `${result.confidence}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Advice Content */}
+              <div className="px-8 pb-8 flex flex-col gap-5">
+                <div className="bg-green-50/50 rounded-2xl p-6 border border-green-100/50 hover-lift transition-all">
+                  <h4 className="m-0 mb-3 text-green-700 text-[12px] font-black uppercase tracking-widest flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">💊</span> Treatment Plan
+                    </div>
+                    <SpeakButton text={`Treatment Plan: ${result.treatment}`} lang={lang} />
+                  </h4>
+                  <p className="m-0 text-gray-700 text-sm sm:text-base leading-relaxed font-medium italic">"{result.treatment}"</p>
+                </div>
+
+                <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100/50 hover-lift transition-all">
+                  <h4 className="m-0 mb-3 text-blue-700 text-[12px] font-black uppercase tracking-widest flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🛡️</span> Prevention Strategy
+                    </div>
+                    <SpeakButton text={`Prevention Strategy: ${result.prevention}`} lang={lang} />
+                  </h4>
+                  <p className="m-0 text-gray-700 text-sm sm:text-base leading-relaxed font-medium italic">"{result.prevention}"</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className={`p-8 pt-0 flex gap-4 ${isMobile ? 'flex-col' : 'flex-wrap'}`}>
+                <button
+                  onClick={clearImage}
+                  className="flex-1 min-w-[160px] py-4 px-6 bg-white text-gray-900 border-2 border-gray-100 rounded-2xl text-sm font-black transition-all hover:border-gray-900 active:scale-95 ripple"
+                >
+                  Scan New Image
+                </button>
+                <button
+                  onClick={() => navigate('/chat', { state: { prefill: `I scanned a plant leaf and detected "${result.disease}" with ${result.confidence}% confidence. Give me more detailed organic treatment options.` } })}
+                  className="flex-1 min-w-[160px] py-4 px-6 bg-[#16a34a] text-white border-none rounded-2xl text-sm font-black transition-all hover:bg-[#15803d] active:scale-95 shadow-lg shadow-green-600/20 ripple"
+                >
+                  🤖 Talk to AI Expert
+                </button>
+                <button
+                  onClick={handleShareWhatsApp}
+                  className="flex-1 min-w-[160px] py-4 px-6 bg-[#25D366] text-white border-none rounded-2xl text-sm font-black transition-all hover:bg-[#128C7E] active:scale-95 shadow-lg shadow-green-600/20 ripple"
+                >
+                  📱 Share via WhatsApp
+                </button>
               </div>
             </div>
-          ) : (
-            <>
-            {!result && !isAnalyzing ? (
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-15 flex flex-col items-center justify-center min-h-[320px] text-center">
-                <span className="text-6xl opacity-30 mb-4">📷</span>
-                <h3 className="m-0 mb-2 text-gray-700 text-xl font-bold">
-                  Your analysis results will appear here
-                </h3>
-                <p className="m-0 text-gray-400 font-medium">
-                  Upload an image and click Analyse
-                </p>
-              </div>
-            ) : isAnalyzing ? (
-              <div className="bg-white rounded-2xl p-15 flex flex-col items-center justify-center min-h-[320px] shadow-sm border border-gray-100 text-center">
-                <div className="w-14 h-14 border-5 border-green-50 border-t-green-600 rounded-full animate-spin mb-5" />
-                <p className="m-0 text-green-600 font-extrabold text-lg">Analyzing your image...</p>
-                <p className="m-0 mt-2 text-gray-400 text-sm italic font-medium">Running disease detection model</p>
-              </div>
-            ) : result ? (
-              <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/60 border border-gray-200 overflow-hidden animate-fade-in-up">
-                {/* Disease Header */}
-                <div className="p-8 pb-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h2 className="m-0 text-3xl font-black text-gray-900 tracking-tight leading-tight">
-                      {result.disease}
-                    </h2>
-                    <div className="flex items-center gap-2">
-                      <SpeakButton text={`Detected ${result.disease}. Confidence ${result.confidence} percent. Severity ${result.severity}.`} lang={lang} />
-                      <span className="text-4xl">🔬</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2.5 mb-6">
-                    <span className="bg-green-100 text-green-800 py-1.5 px-4 rounded-full text-xs font-black uppercase tracking-wider border border-green-200">
-                      {result.confidence}% Confidence
-                    </span>
-                    <span className={`py-1.5 px-4 rounded-full text-xs font-black uppercase tracking-wider border ${severityBg(result.severity)} ${severityColor(result.severity)}`}>
-                      {result.severity} Severity
-                    </span>
-                  </div>
-
-                  <div className="mb-2 flex justify-between font-black text-[11px] text-gray-400 uppercase tracking-widest">
-                    <span>Detection Confidence</span>
-                    <span>{result.confidence}%</span>
-                  </div>
-                  <div className="h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner p-0.5">
-                    <div 
-                      className="h-full bg-green-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(22,163,74,0.5)]"
-                      style={{ width: `${result.confidence}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Advice Content */}
-                <div className="px-8 pb-8 flex flex-col gap-5">
-                  <div className="bg-green-50/50 rounded-2xl p-6 border border-green-100/50 hover-lift transition-all">
-                    <h4 className="m-0 mb-3 text-green-700 text-[12px] font-black uppercase tracking-widest flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">💊</span> Treatment Plan
-                      </div>
-                      <SpeakButton text={`Treatment Plan: ${result.treatment}`} lang={lang} />
-                    </h4>
-                    <p className="m-0 text-gray-700 text-sm sm:text-base leading-relaxed font-medium italic">"{result.treatment}"</p>
-                  </div>
-
-                  <div className="bg-blue-50/50 rounded-2xl p-6 border border-blue-100/50 hover-lift transition-all">
-                    <h4 className="m-0 mb-3 text-blue-700 text-[12px] font-black uppercase tracking-widest flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">🛡️</span> Prevention Strategy
-                      </div>
-                      <SpeakButton text={`Prevention Strategy: ${result.prevention}`} lang={lang} />
-                    </h4>
-                    <p className="m-0 text-gray-700 text-sm sm:text-base leading-relaxed font-medium italic">"{result.prevention}"</p>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className={`p-8 pt-0 flex gap-4 ${isMobile ? 'flex-col' : 'flex-wrap'}`}>
-                  <button
-                    onClick={clearImage}
-                    className="flex-1 min-w-[160px] py-4 px-6 bg-white text-gray-900 border-2 border-gray-100 rounded-2xl text-sm font-black transition-all hover:border-gray-900 active:scale-95 ripple"
-                  >
-                    Scan New Image
-                  </button>
-                  <button
-                    onClick={() => navigate('/chat', { state: { prefill: `I scanned a plant leaf and detected "${result.disease}" with ${result.confidence}% confidence. Give me more detailed organic treatment options.` } })}
-                    className="flex-1 min-w-[160px] py-4 px-6 bg-[#16a34a] text-white border-none rounded-2xl text-sm font-black transition-all hover:bg-[#15803d] active:scale-95 shadow-lg shadow-green-600/20 ripple"
-                  >
-                    🤖 Talk to AI Expert
-                  </button>
-                  <button
-                    onClick={handleShareWhatsApp}
-                    className="flex-1 min-w-[160px] py-4 px-6 bg-[#25D366] text-white border-none rounded-2xl text-sm font-black transition-all hover:bg-[#128C7E] active:scale-95 shadow-lg shadow-green-600/20 ripple"
-                  >
-                    📱 Share via WhatsApp
-                  </button>
-                </div>
-              </div>
-            ) : null}
-            </>
-          )}
+          ) : null}
         </div>
       </div>
 
