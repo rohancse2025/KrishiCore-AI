@@ -4,7 +4,9 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { useSensor } from '../../context/SensorContext';
 import SpeakButton from '../../components/SpeakButton';
 import CropSearchInput from '../../components/CropSearchInput';
-import { recommendCropOffline } from '../../services/offline-crop-rules';
+import { recommendCropsOffline } from '../../services/offline-crop-engine';
+import { analyzeSoilOffline } from '../../data/soil-analysis-offline';
+import { calculateFertilizerOffline } from '../../data/fertilizer-offline';
 import { API_BASE_URL } from '../../config';
 
 // Helper for farmer-friendly hints
@@ -76,6 +78,9 @@ export default function CropsPage({ lang }: { lang: string }) {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const [soilAnalysis, setSoilAnalysis] = useState<any | null>(null);
+  const [fertPlan, setFertPlan] = useState<any | null>(null);
+
   // --- SOIL ANALYSIS STATE ---
   const [soilInputs, setSoilInputs] = useState({ ph: 6.5, nitrogen: 45, moisture: 50 });
   const [soilResult, setSoilResult] = useState<{ score: number; status: string; badge: string; suggestion: string } | null>(null);
@@ -88,58 +93,24 @@ export default function CropsPage({ lang }: { lang: string }) {
 
     const { ph, nitrogen, moisture } = soilInputs;
 
-    // Local scoring logic
-    const phScore = ph >= 6 && ph <= 7.5 ? 4 : ph >= 5.5 && ph <= 8 ? 2 : 1;
-    const nScore  = nitrogen >= 30 && nitrogen <= 80 ? 3 : nitrogen >= 15 ? 2 : 1;
-    const mScore  = moisture >= 40 && moisture <= 70 ? 3 : moisture >= 25 ? 2 : 1;
-    const total   = phScore + nScore + mScore;
-    const status  = total >= 8 ? 'Good' : total >= 5 ? 'Fair' : 'Poor';
-    const badge   = total >= 8 ? 'bg-green-100 text-green-700 border-green-300'
-                  : total >= 5 ? 'bg-amber-100 text-amber-700 border-amber-300'
+    // ALWAYS use offline deterministic analyzer for soil tab
+    try {
+      const res = analyzeSoilOffline(nitrogen, 0 /*P unused*/, moisture /*K unused*/, ph);
+      // Map returned structure into existing UI shape
+      const scoreOut = Math.max(1, Math.min(10, Math.round((res.health_score || 0) / 10)));
+      const status = res.overall_health;
+      const badge = status === 'Excellent' ? 'bg-green-100 text-green-700 border-green-300'
+                  : status === 'Good' ? 'bg-green-50 text-green-700 border-green-300'
+                  : status === 'Fair' ? 'bg-amber-100 text-amber-700 border-amber-300'
                   : 'bg-red-100 text-red-700 border-red-300';
 
-    let suggestion = '';
-    
-    if (!navigator.onLine) {
-      // Descriptive offline fallback for soil analysis
-      if (ph < 6) {
-        suggestion = `Your soil is acidic (pH ${ph}). Apply lime or wood ash to raise pH. Nitrogen levels are ${nitrogen > 60 ? 'good' : 'low'}.`;
-      } else if (ph > 7.5) {
-        suggestion = `Your soil is alkaline (pH ${ph}). Apply gypsum or organic compost to lower pH and improve nutrient availability.`;
-      } else if (nitrogen < 30) {
-        suggestion = `Soil pH is optimal, but nitrogen is low (${nitrogen} mg/kg). Apply Urea or Neem-coated urea before the next watering.`;
-      } else if (moisture < 30) {
-        suggestion = `Soil is very dry (${moisture}%). Irrigate immediately to prevent crop wilting and allow nutrient absorption.`;
-      } else if (moisture > 75) {
-        suggestion = `Soil is waterlogged (${moisture}%). Stop irrigation and ensure proper drainage to prevent root rot.`;
-      } else {
-        suggestion = "Your soil health looks excellent! Maintain organic matter levels and follow your regular crop rotation.";
-      }
-      
-      setSoilResult({ score: total, status, badge, suggestion: suggestion + " (📡 Offline Analysis)" });
-      setSoilLoading(false);
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/chat/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: `My soil has pH ${ph}, Nitrogen ${nitrogen} mg/kg, and Moisture ${moisture}%. In 2 short sentences, tell me if this is healthy and the single most important action I should take now. Reply in English only.`,
-          history: []
-        })
-      });
-      const data = await res.json();
-      suggestion = data.reply || '';
-    } catch {
-      // Fallback logic for network error
-      if (ph < 6) suggestion = 'Add lime to raise soil pH to optimal range.';
-      else if (nitrogen < 30) suggestion = 'Apply urea or compost to boost nitrogen levels.';
-      else if (moisture < 40) suggestion = 'Increase irrigation frequency for better crop growth.';
-      else suggestion = 'Soil conditions look healthy. Maintain current practices.';
+      const suggestion = (res.recommendations || []).slice(0,3).join(' ');
+      setSoilResult({ score: scoreOut, status, badge, suggestion: suggestion + ' (💾 Offline Analyzer)' });
+      setSoilAnalysis(res);
+    } catch (err) {
+      console.error('Offline soil analysis failed', err);
+      setSoilResult({ score: 0, status: 'Unknown', badge: 'bg-red-100 text-red-700 border-red-300', suggestion: 'Could not analyze soil.' });
     } finally {
-      setSoilResult({ score: total, status, badge, suggestion });
       setSoilLoading(false);
     }
   };
@@ -156,19 +127,20 @@ export default function CropsPage({ lang }: { lang: string }) {
 
     // Check if offline
     if (!navigator.onLine) {
-      const offline = recommendCropOffline(inputs.N, inputs.P, inputs.K, inputs.temperature, inputs.humidity, inputs.ph, inputs.rainfall);
+      const offlineResults = recommendCropsOffline({ soilN: inputs.N, soilP: inputs.P, soilK: inputs.K, pH: inputs.ph, temperature: inputs.temperature, humidity: inputs.humidity, rainfall: inputs.rainfall });
+      const top = offlineResults[0];
       setTimeout(() => {
         setAiCrops([{
-          name: offline.crop,
+          name: top.crop,
           emoji: '🌱',
-          reason: offline.reason,
+          reason: top.reason.join ? top.reason.join(', ') : (top.reason || ''),
           water_needed: inputs.rainfall > 150 ? 'High' : 'Moderate',
           best_season: 'Current',
           profit_potential: 'High',
           offline: true
         }]);
         setIsLoading(false);
-      }, 800); // Simulate local processing
+      }, 400);
       return;
     }
 
@@ -193,18 +165,22 @@ export default function CropsPage({ lang }: { lang: string }) {
       const data = await res.json();
       setAiCrops(data.crops || []);
     } catch (err: any) {
-      // Fallback to offline rule-based system on network error
-      const offline = recommendCropOffline(inputs.N, inputs.P, inputs.K, inputs.temperature, inputs.humidity, inputs.ph, inputs.rainfall);
-      setAiCrops([{
-        name: offline.crop,
-        emoji: '🌱',
-        reason: offline.reason,
-        water_needed: inputs.rainfall > 150 ? 'High' : 'Moderate',
-        best_season: 'Current',
-        profit_potential: 'High',
-        offline: true
-      }]);
-      
+      // Fallback to offline recommendation engine on network error
+      try {
+        const offlineResults = recommendCropsOffline({ soilN: inputs.N, soilP: inputs.P, soilK: inputs.K, pH: inputs.ph, temperature: inputs.temperature, humidity: inputs.humidity, rainfall: inputs.rainfall });
+        const top = offlineResults[0];
+        setAiCrops([{
+          name: top.crop,
+          emoji: '🌱',
+          reason: (top.reason && top.reason.join) ? top.reason.join(', ') : (top.reason || ''),
+          water_needed: inputs.rainfall > 150 ? 'High' : 'Moderate',
+          best_season: 'Current',
+          profit_potential: 'High',
+          offline: true
+        }]);
+      } catch (e) {
+        console.error('Offline recommendation failed', e);
+      }
       if (err.name === 'AbortError') {
         console.warn("Recommendation timed out, using offline fallback.");
       } else {
@@ -245,65 +221,15 @@ export default function CropsPage({ lang }: { lang: string }) {
     setFertLoading(true);
     setFertResult(null);
 
-    // Offline check
-    if (!navigator.onLine) {
-      setTimeout(() => {
-        let advice = "";
-        const crop = fertInputs.crop.toLowerCase();
-        
-        // Base advice
-        if (fertInputs.N < 40) advice += `Apply 45kg Urea per acre for ${fertInputs.crop}. `;
-        if (fertInputs.P < 30) advice += `Add 50kg DAP at the time of sowing. `;
-        if (fertInputs.K < 40) advice += `Use 25kg MOP to improve grain/fruit weight. `;
-        
-        // Crop-specific additions
-        if (crop.includes('rice') || crop.includes('paddy')) {
-          advice += "Maintain 2-5cm water level during tillering stage. ";
-        } else if (crop.includes('wheat')) {
-          advice += "Apply second dose of Urea after first irrigation (21 days). ";
-        } else if (crop.includes('tomato') || crop.includes('potato')) {
-          advice += "High potassium is critical for these crops to avoid blight. ";
-        }
-
-        if (advice === "") advice = "Your current soil NPK levels are sufficient for this crop cycle. Add 2 tons of FYM/compost per acre to maintain long-term health.";
-        
-        setFertResult(advice + " (📡 Offline Calculation)");
-        setFertLoading(false);
-      }, 800);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-    const prompt = `I am growing ${fertInputs.crop} on ${fertInputs.soil} soil. My soil has Nitrogen: ${fertInputs.N} PPM, Phosphorus: ${fertInputs.P} PPM, Potassium: ${fertInputs.K} PPM. Give me exact fertilizer recommendations — which fertilizers to apply, how much per acre, and when to apply. Provide 3 short, professional sentences. Reply in English only.`;
-
+    // ALWAYS use offline fertilizer calculator per spec
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/chat/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: prompt, history: [] }),
-        signal: controller.signal
-      });
-      if (res.status === 429) {
-        setFertResult("AI Limit Reached. Our models are busy—please try again in 5 minutes.");
-        return;
-      }
-      
-      const data = await res.json();
-      setFertResult(data.reply);
-    } catch (err: any) {
-      console.error("Fertilizer Advisor Error:", err);
-      // Offline fallback on error
-      let advice = "";
-      if (fertInputs.N < 30) advice += "Apply 50kg Urea per acre to boost nitrogen. ";
-      if (fertInputs.P < 25) advice += "Add 40kg DAP at sowing time. ";
-      if (fertInputs.K < 30) advice += "Apply 25kg MOP for better grain quality. ";
-      if (advice === "") advice = "Soil NPK levels look balanced for this crop. Maintain organic matter.";
-      
-      setFertResult(advice + " (Offline Fallback)");
+      const plan = calculateFertilizerOffline(fertInputs.crop || 'Maize', 1);
+      setFertPlan(plan);
+      setFertResult(`Recommended N:${plan.recommendedN} P:${plan.recommendedP} K:${plan.recommendedK}. Estimated cost: ${plan.estimated_cost} (💾 Offline)`);
+    } catch (err) {
+      console.error('Fertilizer calc failed', err);
+      setFertResult('Could not calculate fertilizer plan offline.');
     } finally {
-      clearTimeout(timeoutId);
       setFertLoading(false);
     }
   };
