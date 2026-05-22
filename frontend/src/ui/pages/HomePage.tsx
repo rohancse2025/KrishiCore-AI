@@ -349,12 +349,10 @@ export default function HomePage({ lang }: { lang: string }) {
       try {
         let url = `${API_BASE_URL}/api/v1/weather?lat=${coords.lat}&lon=${coords.lon}`;
         
-        // If we have a profile location or specific district, try city-based weather
-        const locationToTry = farmer?.location || marketDistrict;
-        
-        if (locationSource === 'Profile' || (locationSource === 'GPS' && locationToTry)) {
-          // Clean the city name: take the first part of "City, District" for better OWM compatibility
-          const cleanCity = locationToTry.split(',')[0].trim();
+        // Use profile city only when user explicitly chose Profile as source.
+        // For GPS users, prefer lat/lon to ensure exact locality.
+        if (locationSource === 'Profile' && farmer?.location) {
+          const cleanCity = farmer.location.split(',')[0].trim();
           url = `${API_BASE_URL}/api/v1/weather?city=${encodeURIComponent(cleanCity)}`;
         }
         
@@ -417,13 +415,17 @@ export default function HomePage({ lang }: { lang: string }) {
       const preferred = localStorage.getItem('preferred_location_source');
       
       if (preferred === 'Profile' && isLoggedIn && farmer?.location) {
-         const parts = farmer.location.split(',');
-         const state = parts[0]?.trim() || 'Punjab';
-         const city = parts.length > 1 ? parts[1].trim() : 'Ludhiana';
-         setMarketRegion(state);
-         setMarketDistrict(city);
-         setLocationSource('Profile');
-         return;
+        const parts = farmer.location.split(',').map((p: string) => p.trim()).filter(Boolean);
+        // Heuristic: detect a state name if present, otherwise assume last part is state.
+        const INDIAN_STATES = ['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Jammu and Kashmir','Ladakh','Puducherry'];
+        const foundState = parts.find((p: string) => INDIAN_STATES.some(s => s.toLowerCase() === p.toLowerCase()));
+        const state = foundState || parts[parts.length - 1] || 'Punjab';
+        // Prefer the most specific locality (first part) as district/locality
+        const district = parts.find((p: string) => p !== state) || parts[0] || 'Ludhiana';
+        setMarketRegion(state);
+        setMarketDistrict(district);
+        setLocationSource('Profile');
+        return;
       }
 
       // 1. Use Coords if available (from high-accuracy GPS)
@@ -447,12 +449,14 @@ export default function HomePage({ lang }: { lang: string }) {
       
       // 2. Fallback to Profile or Default
       if (isLoggedIn && farmer?.location) {
-         const parts = farmer.location.split(',');
-         const state = parts[0]?.trim() || 'Punjab';
-         const city = parts.length > 1 ? parts[1].trim() : 'Ludhiana';
-         setMarketRegion(state);
-         setMarketDistrict(city);
-         setLocationSource('Profile');
+        const parts = farmer.location.split(',').map((p: string) => p.trim()).filter(Boolean);
+        const INDIAN_STATES = ['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Jammu and Kashmir','Ladakh','Puducherry'];
+        const foundState = parts.find((p: string) => INDIAN_STATES.some(s => s.toLowerCase() === p.toLowerCase()));
+        const state = foundState || parts[parts.length - 1] || 'Punjab';
+        const district = parts.find((p: string) => p !== state) || parts[0] || 'Ludhiana';
+        setMarketRegion(state);
+        setMarketDistrict(district);
+        setLocationSource('Profile');
       } else {
         setMarketRegion('Punjab');
         setMarketDistrict('Ludhiana');

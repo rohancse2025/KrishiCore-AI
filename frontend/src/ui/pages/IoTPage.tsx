@@ -521,7 +521,7 @@ export default function IoTPage({ lang }: { lang: string }) {
           <button 
             onClick={() => handleOverride('ON')}
             disabled={isSendingOverride}
-            className={`font-black py-4 px-4 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2 ${manual_override === 'ON' ? 'bg-green-600 text-white ring-4 ring-green-50' : 'bg-white dark:bg-slate-900 text-green-600 border border-green-600 hover:bg-green-50'}`}
+            className={`font-black py-4 px-4 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2 min-w-[140px] box-border border ${manual_override === 'ON' ? 'bg-green-600 text-white ring-4 ring-green-50 border-green-600' : 'bg-white dark:bg-slate-900 text-green-600 border-green-600 hover:bg-green-50'}`}
           >
             {manual_override === 'ON' ? '✅ ' : '⚡ '}{t('iot_pump_on').toUpperCase()}
           </button>
@@ -529,7 +529,7 @@ export default function IoTPage({ lang }: { lang: string }) {
           <button 
             onClick={() => handleOverride('OFF')}
             disabled={isSendingOverride}
-            className={`font-black py-4 px-4 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2 ${manual_override === 'OFF' ? 'bg-red-600 text-white ring-4 ring-red-50' : 'bg-white dark:bg-slate-900 text-red-600 border border-red-600 hover:bg-red-50'}`}
+            className={`font-black py-4 px-4 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2 min-w-[140px] box-border border ${manual_override === 'OFF' ? 'bg-red-600 text-white ring-4 ring-red-50 border-red-600' : 'bg-white dark:bg-slate-900 text-red-600 border-red-600 hover:bg-red-50'}`}
           >
             {manual_override === 'OFF' ? '🚫 ' : '🛑 '}{t('iot_pump_off').toUpperCase()}
           </button>
@@ -537,7 +537,7 @@ export default function IoTPage({ lang }: { lang: string }) {
           <button 
             onClick={() => handleOverride('AUTO')}
             disabled={isSendingOverride}
-            className={`font-black py-4 px-4 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2 ${manual_override === null ? 'bg-gray-900 text-white ring-4 ring-gray-100' : 'bg-white dark:bg-slate-900 text-gray-900 border border-gray-900 hover:bg-gray-50'}`}
+            className={`font-black py-4 px-4 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2 min-w-[140px] box-border border ${manual_override === null ? 'bg-gray-900 text-white ring-4 ring-gray-100 border-gray-900' : 'bg-white dark:bg-slate-900 text-gray-900 border-gray-900 hover:bg-gray-50'}`}
           >
             {manual_override === null ? '🤖 ' : '🔄 '}{t('iot_auto_mode').toUpperCase()}
           </button>
