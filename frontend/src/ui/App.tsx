@@ -233,11 +233,11 @@ export default function App() {
         >
           <img 
             src="/kisancore_final_v12_zoom.png" 
-            alt="KisanCore AI" 
+            alt="KrishiCore AI" 
             className="w-10 h-10 object-contain rounded-2xl shadow-sm group-hover:scale-110 transition-transform"
           />
           <span className="text-[#16a34a] dark:text-green-500 font-black text-2xl tracking-tight">
-            KisanCore AI
+            KrishiCore AI
           </span>
           <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-black ml-1">V2.1</span>
         </Link>
@@ -476,7 +476,7 @@ export default function App() {
         <footer className="border-t border-gray-100 dark:border-slate-800 py-16 px-8 text-center bg-white dark:bg-slate-900 pl-0">
           <div className="flex flex-col items-center gap-4">
              <img src="/kisancore_final_v12_zoom.png" alt="Logo" className="w-12 h-12 object-contain rounded-2xl mx-auto" />
-             <p className="text-lg font-black text-[#16a34a] uppercase tracking-widest m-0">KisanCore AI</p>
+             <p className="text-lg font-black text-[#16a34a] uppercase tracking-widest m-0">KrishiCore AI</p>
              <p className="text-gray-400 text-xs m-0">© 2026 {t('app_footer_credit')}</p>
           </div>
         </footer>

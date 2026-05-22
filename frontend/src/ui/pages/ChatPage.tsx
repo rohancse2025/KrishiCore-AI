@@ -13,7 +13,7 @@ type Message = {
 
 const INITIAL_MESSAGE: Message = {
   id: '1',
-  text: "Hello! I'm KisanCore AI Assistant 🌾\nI can help you with:\n• Crop selection and planning\n• Disease identification\n• Soil and fertilizer advice\n• Irrigation guidance\n• Market and weather tips\nHow can I help you today?",
+  text: "Hello! I'm KrishiCore AI Assistant 🌾\nI can help you with:\n• Crop selection and planning\n• Disease identification\n• Soil and fertilizer advice\n• Irrigation guidance\n• Market and weather tips\nHow can I help you today?",
   sender: 'ai',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 };

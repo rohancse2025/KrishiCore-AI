@@ -752,7 +752,7 @@ export default function HomePage({ lang }: { lang: string }) {
             <>
               <div className="inline-block bg-[#16a34a] text-white text-sm font-bold px-4 py-1 rounded-full mb-6 whitespace-nowrap shadow-lg animate-fade-in-up [animation-delay:100ms]">
                 <img src="/kisancore_final_v12_zoom.png" alt="" className="w-5 h-5 inline-block mr-2 -mt-0.5 rounded-md" />
-                KisanCore AI V2.0
+                KrishiCore AI V2.0
               </div>
               
               <h1 className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6 tracking-tight drop-shadow-md animate-fade-in-up [animation-delay:300ms] break-words">

@@ -187,7 +187,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
               Your Personal Farm <br />Identity Awaits 🚀
             </h1>
             <p className="text-green-50 text-xl font-medium mb-12 max-w-2xl mx-auto opacity-90 leading-relaxed">
-              Join the KisanCore community to save your soil records, track crop history, and get SMS alerts tailored to your exact location.
+              Join the KrishiCore community to save your soil records, track crop history, and get SMS alerts tailored to your exact location.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-5 justify-center">

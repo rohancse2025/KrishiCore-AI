@@ -146,7 +146,7 @@ export default function LoginPage({ lang, onLogin }: { lang: string, onLogin?: (
           <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/30 backdrop-blur-sm overflow-hidden shadow-xl relative z-10">
             <img src="/kisancore_final_v12_zoom.png" alt="Logo" className="w-14 h-14 object-contain" />
           </div>
-          <h1 className="text-3xl font-black m-0 mb-2 relative z-10 tracking-tight">KisanCore AI</h1>
+          <h1 className="text-3xl font-black m-0 mb-2 relative z-10 tracking-tight">KrishiCore AI</h1>
           <p className="opacity-90 font-bold m-0 uppercase tracking-widest text-[10px] relative z-10">Smart Farming for Indian Farmers</p>
         </div>
         
