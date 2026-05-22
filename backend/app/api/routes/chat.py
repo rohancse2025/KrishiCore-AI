@@ -20,7 +20,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
 
-SYSTEM_PROMPT = """You are KrishiCore AI, a friendly and expert agricultural assistant for Indian farmers.
+SYSTEM_PROMPT = """You are KisanCore AI, a friendly and expert agricultural assistant for Indian farmers.
 
 LANGUAGE RULE:
 - Always reply in the SAME language the user writes in.
