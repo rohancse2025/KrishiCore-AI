@@ -1,5 +1,5 @@
-const CACHE_NAME = 'kisancore-v22';
-const ML_MODEL_CACHE = 'kisancore-ml-v1';
+const CACHE_NAME = 'KrishiCore-v22';
+const ML_MODEL_CACHE = 'KrishiCore-ml-v1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -11,7 +11,7 @@ const MODEL_FILES = [
   '/models/crop-recommender/model.json'
 ];
 
-const DB_NAME = 'kisancore-db';
+const DB_NAME = 'KrishiCore-db';
 const STORE_NAME = 'sync-queue';
 
 // IndexedDB Helper
@@ -139,7 +139,7 @@ self.addEventListener('fetch', event => {
 
              await saveToQueue(event.request);
              if ('sync' in self.registration) {
-               await self.registration.sync.register('kisancore-sync');
+               await self.registration.sync.register('KrishiCore-sync');
              }
              return new Response(
                JSON.stringify({ error: "offline", queued: true }),
@@ -186,7 +186,7 @@ self.addEventListener('fetch', event => {
 });
 
 self.addEventListener('sync', event => {
-  if (event.tag === 'kisancore-sync') {
+  if (event.tag === 'KrishiCore-sync') {
     event.waitUntil(replayQueue());
   }
 });

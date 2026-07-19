@@ -114,8 +114,8 @@ export default function LoginPage({ lang, onLogin }: { lang: string, onLogin?: (
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Failed to authenticate");
       
-      localStorage.setItem('kisancore_token', data.token);
-      localStorage.setItem('kisancore_farmer', JSON.stringify(data.farmer));
+      localStorage.setItem('KrishiCore_token', data.token);
+      localStorage.setItem('KrishiCore_farmer', JSON.stringify(data.farmer));
       
       if (onLogin) onLogin(data.farmer);
 
@@ -144,9 +144,9 @@ export default function LoginPage({ lang, onLogin }: { lang: string, onLogin?: (
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
           
           <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-white/30 backdrop-blur-sm overflow-hidden shadow-xl relative z-10">
-            <img src="/kisancore_final_v12_zoom.png" alt="Logo" className="w-14 h-14 object-contain" />
+            <img src="/KrishiCore_final_v12_zoom.png" alt="Logo" className="w-14 h-14 object-contain" />
           </div>
-          <h1 className="text-3xl font-black m-0 mb-2 relative z-10 tracking-tight">KisanCore AI</h1>
+          <h1 className="text-3xl font-black m-0 mb-2 relative z-10 tracking-tight">KrishiCore AI</h1>
           <p className="opacity-90 font-bold m-0 uppercase tracking-widest text-[10px] relative z-10">Smart Farming for Indian Farmers</p>
         </div>
         
@@ -201,7 +201,7 @@ export default function LoginPage({ lang, onLogin }: { lang: string, onLogin?: (
                  pattern="[0-9]*"
                  required 
                  autoComplete="tel"
-                 name="kisancore_phone_field"
+                 name="KrishiCore_phone_field"
                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 pl-20 pr-5 py-4 rounded-xl font-bold focus:border-green-500 outline-none transition-all text-base text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 caret-green-600" 
                  onChange={(e) => {
                    let val = e.target.value.replace(/\D/g, '');

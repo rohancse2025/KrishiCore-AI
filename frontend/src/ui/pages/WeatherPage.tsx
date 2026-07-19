@@ -59,7 +59,7 @@ export default function WeatherPage() {
     }
 
     const preferred = localStorage.getItem('preferred_location_source');
-    const farmer = (() => { try { return JSON.parse(localStorage.getItem('kisancore_farmer') || 'null'); } catch(e){return null;} })();
+    const farmer = (() => { try { return JSON.parse(localStorage.getItem('KrishiCore_farmer') || 'null'); } catch(e){return null;} })();
 
     const fetchProfileWeather = async () => {
        try {

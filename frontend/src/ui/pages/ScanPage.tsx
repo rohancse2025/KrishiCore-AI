@@ -178,7 +178,7 @@ export default function ScanPage({ lang }: { lang: string }) {
 
   const handleShareWhatsApp = () => {
     if (!result) return;
-    const formattedText = `*🌿 KisanCore AI Crop Scan*
+    const formattedText = `*🌿 KrishiCore AI Crop Scan*
 *Disease:* 🦠 ${result.disease}
 *Confidence:* 🎯 ${result.confidence}%
 *Severity:* ⚠️ ${result.severity}
@@ -189,7 +189,7 @@ ${result.treatment}
 *🛡️ Prevention Plan:*
 ${result.prevention}
 
-_Powered by KisanCore AI - Smart Agriculture Assistant_ 👨‍🌾🚜`;
+_Powered by KrishiCore AI - Smart Agriculture Assistant_ 👨‍🌾🚜`;
     const text = encodeURIComponent(formattedText);
     window.open(`whatsapp://send?text=${text}`, '_blank');
   };

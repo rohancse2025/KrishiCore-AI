@@ -1,5 +1,5 @@
 /**
- * KisanCore Offline Chat Engine
+ * KrishiCore Offline Chat Engine
  * Keyword-based semantic matching — no TensorFlow needed.
  * Works fully offline with zero network dependency.
  */

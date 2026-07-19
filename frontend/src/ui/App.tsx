@@ -18,7 +18,7 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [farmer, setFarmer] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('kisancore_farmer') || 'null');
+      return JSON.parse(localStorage.getItem('KrishiCore_farmer') || 'null');
     } catch (e) {
       console.error("Failed to parse farmer data", e);
       return null;
@@ -27,8 +27,8 @@ export default function App() {
   const isLoggedIn = !!farmer;
 
   const logout = () => {
-    localStorage.removeItem('kisancore_farmer');
-    localStorage.removeItem('kisancore_token');
+    localStorage.removeItem('KrishiCore_farmer');
+    localStorage.removeItem('KrishiCore_token');
     setFarmer(null);
     navigate('/');
   };
@@ -187,7 +187,7 @@ export default function App() {
   function RequiresAuth({ children, feature }: { children: React.ReactNode, feature: string }) {
     const farmer = (() => {
       try {
-        return JSON.parse(localStorage.getItem('kisancore_farmer') || 'null');
+        return JSON.parse(localStorage.getItem('KrishiCore_farmer') || 'null');
       } catch (e) {
         return null;
       }
@@ -232,12 +232,12 @@ export default function App() {
           onClick={() => setShowMobileMenu(false)}
         >
           <img 
-            src="/kisancore_final_v12_zoom.png" 
-            alt="KisanCore AI" 
+            src="/KrishiCore_final_v12_zoom.png" 
+            alt="KrishiCore AI" 
             className="w-10 h-10 object-contain rounded-2xl shadow-sm group-hover:scale-110 transition-transform"
           />
           <span className="text-[#16a34a] dark:text-green-500 font-black text-2xl tracking-tight">
-            KisanCore AI
+            KrishiCore AI
           </span>
           <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-black ml-1">V2.1</span>
         </Link>
@@ -384,6 +384,18 @@ export default function App() {
                </div>
             </div>
 
+            {/* MOBILE INSTALL BUTTON */}
+            {deferredPrompt && (
+              <div className="mt-6 flex flex-col gap-4">
+                <button 
+                  onClick={() => { setShowMobileMenu(false); handleInstallClick(); }}
+                  className="w-full flex items-center justify-center gap-3 bg-green-600 text-white py-4 rounded-2xl text-lg font-black shadow-lg shadow-green-600/20 active:scale-95"
+                >
+                  📲 {t('app_install')}
+                </button>
+              </div>
+            )}
+
             {/* MOBILE ACTION BUTTON */}
             {!isLoggedIn ? (
               <div className="mt-8 flex flex-col gap-4">
@@ -475,8 +487,8 @@ export default function App() {
       {!isChatPage && !isLoginPage && (
         <footer className="border-t border-gray-100 dark:border-slate-800 py-16 px-8 text-center bg-white dark:bg-slate-900 pl-0">
           <div className="flex flex-col items-center gap-4">
-             <img src="/kisancore_final_v12_zoom.png" alt="Logo" className="w-12 h-12 object-contain rounded-2xl mx-auto" />
-             <p className="text-lg font-black text-[#16a34a] uppercase tracking-widest m-0">KisanCore AI</p>
+             <img src="/KrishiCore_final_v12_zoom.png" alt="Logo" className="w-12 h-12 object-contain rounded-2xl mx-auto" />
+             <p className="text-lg font-black text-[#16a34a] uppercase tracking-widest m-0">KrishiCore AI</p>
              <p className="text-gray-400 text-xs m-0">© 2026 {t('app_footer_credit')}</p>
           </div>
         </footer>

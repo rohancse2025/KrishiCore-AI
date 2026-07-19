@@ -122,10 +122,10 @@ export default function HomePage({ lang }: { lang: string }) {
   };
   
   // 1. Auth & Profile
-  const isLoggedIn = !!localStorage.getItem('kisancore_farmer');
+  const isLoggedIn = !!localStorage.getItem('KrishiCore_farmer');
   const farmer = (() => {
     try {
-      return JSON.parse(localStorage.getItem('kisancore_farmer') || 'null');
+      return JSON.parse(localStorage.getItem('KrishiCore_farmer') || 'null');
     } catch (e) {
       return null;
     }
@@ -202,7 +202,7 @@ export default function HomePage({ lang }: { lang: string }) {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const syncFarmerToBackend = async (updatedFarmer: any) => {
-    const token = localStorage.getItem('kisancore_token');
+    const token = localStorage.getItem('KrishiCore_token');
     if (!token) return;
 
     setIsSyncing(true);
@@ -267,7 +267,7 @@ export default function HomePage({ lang }: { lang: string }) {
     
     // Update farmer in localStorage
     const updatedFarmer = { ...farmer, active_crops: JSON.stringify(updated) };
-    localStorage.setItem('kisancore_farmer', JSON.stringify(updatedFarmer));
+    localStorage.setItem('KrishiCore_farmer', JSON.stringify(updatedFarmer));
     setCropModalTab('list'); 
     
     // Sync to backend
@@ -285,7 +285,7 @@ export default function HomePage({ lang }: { lang: string }) {
     
     // Update farmer in localStorage
     const updatedFarmer = { ...farmer, active_crops: JSON.stringify(updated) };
-    localStorage.setItem('kisancore_farmer', JSON.stringify(updatedFarmer));
+    localStorage.setItem('KrishiCore_farmer', JSON.stringify(updatedFarmer));
     
     // Sync to backend
     syncFarmerToBackend(updatedFarmer);
@@ -707,7 +707,7 @@ export default function HomePage({ lang }: { lang: string }) {
           {!isLoggedIn ? (
             <>
               <div className="inline-block bg-[#16a34a] text-white text-sm font-bold px-4 py-1 rounded-full mb-6 whitespace-nowrap shadow-lg animate-fade-in-up [animation-delay:100ms]">
-                <img src="/kisancore_final_v12_zoom.png" alt="" className="w-5 h-5 inline-block mr-2 -mt-0.5 rounded-md" />
+                <img src="/KrishiCore_final_v12_zoom.png" alt="" className="w-5 h-5 inline-block mr-2 -mt-0.5 rounded-md" />
                 AI Powered Farming
               </div>
               
@@ -751,8 +751,8 @@ export default function HomePage({ lang }: { lang: string }) {
           ) : (
             <>
               <div className="inline-block bg-[#16a34a] text-white text-sm font-bold px-4 py-1 rounded-full mb-6 whitespace-nowrap shadow-lg animate-fade-in-up [animation-delay:100ms]">
-                <img src="/kisancore_final_v12_zoom.png" alt="" className="w-5 h-5 inline-block mr-2 -mt-0.5 rounded-md" />
-                KisanCore AI V2.0
+                <img src="/KrishiCore_final_v12_zoom.png" alt="" className="w-5 h-5 inline-block mr-2 -mt-0.5 rounded-md" />
+                KrishiCore AI V2.0
               </div>
               
               <h1 className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6 tracking-tight drop-shadow-md animate-fade-in-up [animation-delay:300ms] break-words">

@@ -11,7 +11,7 @@ from app.database import get_db, Farmer, FarmerHistory, CropRecord
 router = APIRouter()
 
 # --- CONFIG ---
-SECRET_KEY = os.getenv("SECRET_KEY", "kisancore-secret-key-2024")
+SECRET_KEY = os.getenv("SECRET_KEY", "KrishiCore-secret-key-2024")
 ALGORITHM = "HS256"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
@@ -121,7 +121,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         
         # 2. Send Welcome Message
         welcome_msg = (
-            f"🌿 Welcome to KisanCore AI, {req.name}!\n\n"
+            f"🌿 Welcome to KrishiCore AI, {req.name}!\n\n"
             f"Your account is now active. You will receive smart alerts here for your farm.\n"
             f"Send 'STATUS' anytime to get live data from your sensors.\n\n"
             f"Happy Farming! 👨‍🌾🚜"

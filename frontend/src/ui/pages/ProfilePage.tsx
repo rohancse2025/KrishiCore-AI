@@ -30,7 +30,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
   useEffect(() => {
     const farmer = (() => {
       try {
-        return JSON.parse(localStorage.getItem('kisancore_farmer') || 'null');
+        return JSON.parse(localStorage.getItem('KrishiCore_farmer') || 'null');
       } catch (e) {
         return null;
       }
@@ -42,7 +42,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
 
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('kisancore_token');
+        const token = localStorage.getItem('KrishiCore_token');
         const res = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -71,7 +71,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
     if (onLogout) {
       onLogout();
     } else {
-      localStorage.removeItem('kisancore_farmer');
+      localStorage.removeItem('KrishiCore_farmer');
       navigate('/');
       window.location.reload();
     }
@@ -84,7 +84,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('kisancore_token');
+      const token = localStorage.getItem('KrishiCore_token');
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -93,8 +93,8 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
         if (onLogout) {
           onLogout();
         } else {
-          localStorage.removeItem('kisancore_farmer');
-          localStorage.removeItem('kisancore_token');
+          localStorage.removeItem('KrishiCore_farmer');
+          localStorage.removeItem('KrishiCore_token');
           navigate('/');
           window.location.reload();
         }
@@ -132,7 +132,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
     };
 
     try {
-      const token = localStorage.getItem('kisancore_token');
+      const token = localStorage.getItem('KrishiCore_token');
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/profile`, {
         method: 'PUT',
         headers: { 
@@ -145,7 +145,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
       const result = await res.json();
 
       if (res.ok) {
-        localStorage.setItem('kisancore_farmer', JSON.stringify(result.farmer));
+        localStorage.setItem('KrishiCore_farmer', JSON.stringify(result.farmer));
         setMessage({ text: 'Profile updated successfully!', type: 'success' });
         setTimeout(() => setMessage({ text: '', type: '' }), 3000);
       } else {
@@ -167,7 +167,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
     );
   }
 
-  const isLoggedIn = !!localStorage.getItem('kisancore_farmer');
+  const isLoggedIn = !!localStorage.getItem('KrishiCore_farmer');
 
   if (!isLoggedIn) {
     return (
@@ -187,7 +187,7 @@ export default function ProfilePage({ lang, onLogout }: { lang: string, onLogout
               Your Personal Farm <br />Identity Awaits 🚀
             </h1>
             <p className="text-green-50 text-xl font-medium mb-12 max-w-2xl mx-auto opacity-90 leading-relaxed">
-              Join the KisanCore community to save your soil records, track crop history, and get SMS alerts tailored to your exact location.
+              Join the KrishiCore community to save your soil records, track crop history, and get SMS alerts tailored to your exact location.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-5 justify-center">

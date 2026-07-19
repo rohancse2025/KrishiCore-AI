@@ -160,7 +160,7 @@ async def post_iot_data(data: IOTData):
             print(f"🚨 DRY ALERT TRIGGERED! Moisture: {data.soil_moisture}%")
             latest_reading["last_alert_time"] = time.time()
             alert_msg = (
-                f"KisanCore SMART ALERT:\n"
+                f"KrishiCore SMART ALERT:\n"
                 f"Soil moisture is TOO DRY ({data.soil_moisture}%).\n"
                 f"Your crops may need water. Should I turn on the pump?\n"
                 f"Reply 'PUMP ON 30' to water for 30 mins."
@@ -228,7 +228,7 @@ async def get_latest_data():
 
 @router.get("/test-alert")
 async def test_alert():
-    msg = "KisanCore Test: Your WhatsApp Alert System is working! 🚀🌾"
+    msg = "KrishiCore Test: Your WhatsApp Alert System is working! 🚀🌾"
     broadcast_whatsapp(msg)
     return {"status": "test_triggered", "targets": list(set(latest_reading.get("farmer_phones", [])))}
 

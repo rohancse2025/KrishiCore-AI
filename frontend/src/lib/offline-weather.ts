@@ -1,5 +1,5 @@
 /**
- * KisanCore Offline Weather Forecaster
+ * KrishiCore Offline Weather Forecaster
  * Rule-based prediction from sensor readings + Indian seasonal patterns.
  * No internet required — uses barometric pressure, temperature, humidity.
  */

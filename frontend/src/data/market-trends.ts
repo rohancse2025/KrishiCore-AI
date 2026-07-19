@@ -1,5 +1,5 @@
 /**
- * KisanCore Offline Market Price Estimator
+ * KrishiCore Offline Market Price Estimator
  * Historical 3-year averages + monthly seasonal multipliers for 30+ major crops.
  * All prices in ₹/quintal (100 kg).
  */

@@ -42,54 +42,54 @@ def send_alert(req: SMSRequest):
     soil = req.data.get("soil_moisture", 0)
     temp = req.data.get("temperature", 0)
     if soil < 30:
-      msg = (f"KisanCore ALERT: Your farm soil "
+      msg = (f"KrishiCore ALERT: Your farm soil "
         f"moisture is {soil}% - Too DRY! "
         f"Please irrigate crops immediately. "
-        f"Temp: {temp}C. -KisanCore AI")
+        f"Temp: {temp}C. -KrishiCore AI")
     elif soil > 70:
-      msg = (f"KisanCore ALERT: Soil moisture "
+      msg = (f"KrishiCore ALERT: Soil moisture "
         f"is {soil}% - Too WET! "
         f"Stop irrigation, check drainage. "
-        f"-KisanCore AI")
+        f"-KrishiCore AI")
     else:
-      msg = (f"KisanCore: Farm update - "
+      msg = (f"KrishiCore: Farm update - "
         f"Soil moisture {soil}%, Temp {temp}C. "
         f"Conditions are optimal today. "
-        f"-KisanCore AI")
+        f"-KrishiCore AI")
         
   elif req.message_type == "crop":
     crop = req.data.get("crop", "Unknown")
     confidence = req.data.get("confidence", 0)
-    msg = (f"KisanCore Crop Advice: Based on "
+    msg = (f"KrishiCore Crop Advice: Based on "
       f"your soil data, best crop to grow is "
       f"{crop} ({confidence}% match). "
       f"Visit app for full details. "
-      f"-KisanCore AI")
+      f"-KrishiCore AI")
       
   elif req.message_type == "market":
     commodity = req.data.get("commodity", "")
     price = req.data.get("price", 0)
     trend = req.data.get("trend", "stable")
-    msg = (f"KisanCore Market: {commodity} "
+    msg = (f"KrishiCore Market: {commodity} "
       f"price today Rs.{price}/quintal "
       f"({trend}). Check market page for "
-      f"all mandi prices. -KisanCore AI")
+      f"all mandi prices. -KrishiCore AI")
       
   elif req.message_type == "weather":
     temp = req.data.get("temperature", 0)
     condition = req.data.get("condition", "")
     tip = req.data.get("tip", "")
-    msg = (f"KisanCore Weather: Today {temp}C "
+    msg = (f"KrishiCore Weather: Today {temp}C "
       f"{condition}. Tip: {tip} "
-      f"-KisanCore AI")
+      f"-KrishiCore AI")
       
   elif req.message_type == "disease":
     disease = req.data.get("disease", "")
     treatment = req.data.get("treatment", "")
-    msg = (f"KisanCore Disease Alert: "
+    msg = (f"KrishiCore Disease Alert: "
       f"{disease} detected on your crop. "
       f"Treatment: {treatment} "
-      f"-KisanCore AI")
+      f"-KrishiCore AI")
 
   if not msg:
     return {"status": "error", "message": "Unknown message type"}
@@ -102,14 +102,14 @@ def daily_summary(phone: str,
   temperature: float, humidity: float,
   soil_moisture: float, top_crop: str):
   msg = (
-    f"KisanCore Daily Summary:\n"
+    f"KrishiCore Daily Summary:\n"
     f"Farm: Temp {temperature}C, "
     f"Humidity {humidity}%\n"
     f"Soil: {soil_moisture}% moisture\n"
     f"Best crop: {top_crop}\n"
     f"Irrigation: "
     f"{'ON - Irrigate now' if soil_moisture < 30 else 'OFF - OK'}\n"
-    f"-KisanCore AI")
+    f"-KrishiCore AI")
   success = send_sms(phone, msg)
   return {"status": "sent" if success else "failed"}
 
@@ -147,9 +147,9 @@ async def handle_incoming_whatsapp(
             last_seen = iot.latest_reading.get("timestamp", "Never")
             soil = iot.latest_reading.get("soil_moisture", 0)
             if last_seen == "Never":
-                response_msg = "⚠️ Cannot activate pump. No data received from your farm yet. Please check your device connection. - KisanCore AI"
+                response_msg = "⚠️ Cannot activate pump. No data received from your farm yet. Please check your device connection. - KrishiCore AI"
             elif soil == 0.0:
-                response_msg = "⚠️ Cannot activate pump. Soil sensor is disconnected. Pump is disabled for safety. - KisanCore AI"
+                response_msg = "⚠️ Cannot activate pump. Soil sensor is disconnected. Pump is disabled for safety. - KrishiCore AI"
             else:
                 duration = 60
                 parts = text.split()
@@ -160,33 +160,33 @@ async def handle_incoming_whatsapp(
                 iot.latest_reading["manual_override"] = "ON"
                 iot.latest_reading["override_expiry_time"] = time.time() + (duration * 60)
                 iot.save_persistence() # CRITICAL: Save to disk for other workers
-                response_msg = f"KisanCore [V2.3]: Pump activated for {duration} mins. 💧"
+                response_msg = f"KrishiCore [V2.3]: Pump activated for {duration} mins. 💧"
 
         elif is_pump_off:
             last_seen = iot.latest_reading.get("timestamp", "Never")
             soil = iot.latest_reading.get("soil_moisture", 0)
             if last_seen == "Never":
-                response_msg = "⚠️ Cannot communicate with pump. No data received from your farm yet. - KisanCore AI"
+                response_msg = "⚠️ Cannot communicate with pump. No data received from your farm yet. - KrishiCore AI"
             elif soil == 0.0:
                 iot.latest_reading["manual_override"] = "OFF"
                 iot.latest_reading["override_expiry_time"] = time.time() + 86400
                 iot.save_persistence() # CRITICAL: Save to disk for other workers
-                response_msg = "KisanCore [V2.3]: Pump is already disabled due to disconnected sensor, but manual OFF state is saved. 🛑"
+                response_msg = "KrishiCore [V2.3]: Pump is already disabled due to disconnected sensor, but manual OFF state is saved. 🛑"
             else:
                 iot.latest_reading["manual_override"] = "OFF"
                 iot.latest_reading["override_expiry_time"] = time.time() + 86400
                 iot.save_persistence() # CRITICAL: Save to disk for other workers
-                response_msg = "KisanCore [V2.3]: Pump turned OFF manually. 🛑"
+                response_msg = "KrishiCore [V2.3]: Pump turned OFF manually. 🛑"
 
         elif "AUTO" in text:
             last_seen = iot.latest_reading.get("timestamp", "Never")
             if last_seen == "Never":
-                response_msg = "⚠️ Cannot change mode. No data received from your farm yet. - KisanCore AI"
+                response_msg = "⚠️ Cannot change mode. No data received from your farm yet. - KrishiCore AI"
             else:
                 iot.latest_reading["manual_override"] = None
                 iot.latest_reading["override_expiry_time"] = 0
                 iot.save_persistence()
-                response_msg = "KisanCore [V2.3]: Pump restored to Autonomous AI Mode. 🤖"
+                response_msg = "KrishiCore [V2.3]: Pump restored to Autonomous AI Mode. 🤖"
 
         elif "STATUS" in text:
             temp = iot.latest_reading.get("temperature", 0)
@@ -201,9 +201,9 @@ async def handle_incoming_whatsapp(
             if last_seen == "Never":
                 response_msg = (
                     "⚠️ Farm Status Unavailable:\n"
-                    "No data received from your farm yet. Please ensure your KisanCore device is powered on and connected to WiFi.\n"
+                    "No data received from your farm yet. Please ensure your KrishiCore device is powered on and connected to WiFi.\n"
                     "🕒 Last Update: Never\n"
-                    "- KisanCore AI"
+                    "- KrishiCore AI"
                 )
             elif not sensor_ok:
                 response_msg = (
@@ -215,7 +215,7 @@ async def handle_incoming_whatsapp(
                     f"⚙️ Mode: {mode}\n"
                     f"🕒 Last Update: {last_seen}\n"
                     f"⚠️ Please reconnect your soil sensor cable to GPIO 34.\n"
-                    f"- KisanCore AI"
+                    f"- KrishiCore AI"
                 )
             else:
                 response_msg = (
@@ -226,13 +226,13 @@ async def handle_incoming_whatsapp(
                     f"⚡ Pump: {irr}\n"
                     f"⚙️ Mode: {mode}\n"
                     f"🕒 Last Update: {last_seen}\n"
-                    f"- KisanCore AI"
+                    f"- KrishiCore AI"
                 )
 
         elif "DAILY" in text:
             last_seen = iot.latest_reading.get("timestamp", "Never")
             if last_seen == "Never":
-                response_msg = "📊 Daily Report: No data has been recorded for your farm yet today. - KisanCore AI"
+                response_msg = "📊 Daily Report: No data has been recorded for your farm yet today. - KrishiCore AI"
             else:
                 temp = iot.latest_reading.get("temperature", 0)
                 hum  = iot.latest_reading.get("humidity", 0)
@@ -243,17 +243,17 @@ async def handle_incoming_whatsapp(
                 soil_display = f"{soil}%" if sensor_ok else "DISCONNECTED"
                 irr_display = irr if sensor_ok else "OFF (no soil data)"
                 response_msg = (
-                    f"📊 KisanCore Daily Report:\n"
+                    f"📊 KrishiCore Daily Report:\n"
                     f"Temp: {temp}°C | Humidity: {hum}%\n"
                     f"Soil: {soil_display} | Pump: {irr_display}\n"
                     f"Mode: {mode}\n"
                     f"Send HELP for commands.\n"
-                    f"- KisanCore AI"
+                    f"- KrishiCore AI"
                 )
 
         elif "HELP" in text:
             response_msg = (
-                "📖 KisanCore Commands:\n"
+                "📖 KrishiCore Commands:\n"
                 "• STATUS - Live data\n"
                 "• PUMP ON - Start pump\n"
                 "• PUMP ON 30 - Run for 30m\n"
@@ -265,16 +265,16 @@ async def handle_incoming_whatsapp(
         elif "START" in text or "REGISTER" in text or "HELLO" in text:
             # Generate a deep link to the registration page with the phone pre-filled
             clean_sender = sender.replace("whatsapp:+", "")
-            reg_link = f"https://kisancore-ai.vercel.app/login?register=true&phone={clean_sender}&whatsapp=true"
+            reg_link = f"https://KrishiCore-ai.vercel.app/login?register=true&phone={clean_sender}&whatsapp=true"
             response_msg = (
-                f"👋 Welcome to KisanCore AI!\n\n"
+                f"👋 Welcome to KrishiCore AI!\n\n"
                 f"To finish setting up your smart farm dashboard, please click the link below:\n"
                 f"{reg_link}\n\n"
                 f"Once registered, you can send 'STATUS' here anytime. 🌾"
             )
 
         else:
-            response_msg = "❓ Unknown command. Send HELP for list, or START to register. - KisanCore AI"
+            response_msg = "❓ Unknown command. Send HELP for list, or START to register. - KrishiCore AI"
 
         # Construct TwiML
         xml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -286,7 +286,7 @@ async def handle_incoming_whatsapp(
 
     except Exception as e:
         logger.error(f"WEBHOOK ERROR: {str(e)}")
-        error_xml = '<?xml version="1.0" encoding="UTF-8"?><Response><Message>KisanCore Error: Internal server error.</Message></Response>'
+        error_xml = '<?xml version="1.0" encoding="UTF-8"?><Response><Message>KrishiCore Error: Internal server error.</Message></Response>'
         return Response(content=error_xml, media_type="text/xml")
 
 @router.get("/status")
@@ -328,7 +328,7 @@ def test_sms(phone: str):
             "message": "Twilio not set up yet",
             "fix": "1. Go to twilio.com → sign up free\n2. Get Account SID and Auth Token from dashboard\n3. Get a free phone number\n4. Add all 3 to backend/.env\n5. Add your phone to Twilio verified callers\n6. Restart uvicorn server"
         }
-    success, detail = send_sms_twilio(phone, "KisanCore: SMS test successful! Your alerts are working. 🌾 -KisanCore AI")
+    success, detail = send_sms_twilio(phone, "KrishiCore: SMS test successful! Your alerts are working. 🌾 -KrishiCore AI")
     return {
         "status": "success" if success else "error",
         "message": f"SMS sent to {phone}" if success else "SMS failed",

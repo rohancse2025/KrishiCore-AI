@@ -526,7 +526,7 @@ export default function MarketPage({ lang }: { lang: string }) {
         ) : (
           <>
             <p className="text-gray-600 dark:text-slate-400 font-bold text-sm mb-1.5 flex items-center justify-center gap-1.5 flex-wrap">
-              💡 Seasonal Price Projections • KisanCore AI
+              💡 Seasonal Price Projections • KrishiCore AI
             </p>
             <p className="text-gray-400 dark:text-slate-500 text-xs font-medium">
               Prices are estimated wholesale mandi rates per quintal (100kg). Retail prices may vary.

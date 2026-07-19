@@ -34,7 +34,7 @@ def create_tables():
 
 @app.get("/")
 def root():
-    return {"message": "KisanCore API is Live!", "version": "V2.2"}
+    return {"message": "KrishiCore API is Live!", "version": "V2.2"}
 
 # Duplicate IoT routes removed - logic is now handled in app/api/routes/iot.py
 
