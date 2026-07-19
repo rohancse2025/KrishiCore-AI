@@ -1,6 +1,6 @@
 {
-  "name": "Kisan Core",
-  "short_name": "Kisan",
+  "name": "KrishiCore AI",
+  "short_name": "KrishiCore",
   "description": "Smart agriculture assistant",
   "start_url": ".",
   "display": "standalone",

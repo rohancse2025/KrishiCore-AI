@@ -119,6 +119,8 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (res.ok) {
         const data = await res.json();
         if (data.temperature !== undefined) {
+          // Backend returns unix_timestamp in seconds — convert to ms for Date.now() comparisons
+          const ts = data.unix_timestamp && data.unix_timestamp > 0 ? data.unix_timestamp * 1000 : null;
           setSensorData(prev => ({
             ...prev,
             temperature: data.temperature,
@@ -127,7 +129,7 @@ export const SensorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             irrigation_needed: data.irrigation_needed,
             manual_override: data.manual_override,
             timestamp: data.timestamp,
-            lastUpdateDate: data.unix_timestamp > 0 ? data.unix_timestamp : null,
+            lastUpdateDate: ts,
           }));
         }
       }

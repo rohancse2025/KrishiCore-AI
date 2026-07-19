@@ -41,6 +41,8 @@ export default function WeatherPage() {
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [offlineForecast, setOfflineForecast] = useState<ReturnType<typeof predictWeatherOffline> | null>(null);
+  const [locationSource, setLocationSource] = useState<'GPS'|'Profile'>(() => (localStorage.getItem('preferred_location_source') as 'GPS'|'Profile') || 'GPS');
+  const [coords, setCoords] = useState<{lat:number, lon:number}|null>(null);
 
   useEffect(() => {
     const go = () => setIsOnline(navigator.onLine);
@@ -58,67 +60,66 @@ export default function WeatherPage() {
       return;
     }
 
-    const preferred = localStorage.getItem('preferred_location_source');
     const farmer = (() => { try { return JSON.parse(localStorage.getItem('KrishiCore_farmer') || 'null'); } catch(e){return null;} })();
 
-    const fetchProfileWeather = async () => {
-       try {
-          const parts = farmer.location.split(',');
-          const city = parts.length > 1 ? parts[1].trim() : (parts[0]?.trim() || 'Ludhiana');
-          const res = await fetch(`${API_BASE_URL}/api/v1/weather?city=${encodeURIComponent(city)}`);
-          if (!res.ok) throw new Error("Weather fetch failed");
-          const data: WeatherData = await res.json();
-          setWeather(data);
-       } catch (e) {
-          const params = getDefaultWeatherParams();
-          setOfflineForecast(predictWeatherOffline(params));
-       } finally {
-          setLoading(false);
-       }
+    const fetchByCity = async (cityName?: string) => {
+      try {
+        if (!cityName) throw new Error('No city');
+        const res = await fetch(`${API_BASE_URL}/api/v1/weather?city=${encodeURIComponent(cityName)}`);
+        if (!res.ok) throw new Error('Weather fetch failed');
+        const data: WeatherData = await res.json();
+        setWeather(data);
+      } catch (e) {
+        const params = getDefaultWeatherParams();
+        setOfflineForecast(predictWeatherOffline(params));
+      } finally { setLoading(false); }
     };
 
-    if (preferred === 'Profile' && farmer?.location) {
-      fetchProfileWeather();
+    const fetchByCoords = async (lat: number, lon: number) => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/weather?lat=${lat}&lon=${lon}`);
+        if (!res.ok) throw new Error('Weather fetch failed');
+        const data: WeatherData = await res.json();
+        setWeather(data);
+      } catch (e) {
+        const params = getDefaultWeatherParams();
+        setOfflineForecast(predictWeatherOffline(params));
+      } finally { setLoading(false); }
+    };
+
+    // If user explicitly wants Profile, use profile city
+    if (locationSource === 'Profile' && farmer?.location) {
+      const parts = farmer.location.split(',').map((p: string) => p.trim()).filter(Boolean);
+      const cityPart = parts[0] || parts[1] || 'Ludhiana';
+      fetchByCity(cityPart);
       return;
     }
 
+    // Default: use GPS coordinates
     if (!navigator.geolocation) {
-      if (farmer?.location) {
-        fetchProfileWeather();
-        return;
-      }
-      setError("Your browser does not support location access. Please allow location to see weather.");
+      if (farmer?.location) { fetchByCity(farmer.location.split(',')[0].trim()); return; }
+      setError('Your browser does not support location access. Please allow location to see weather.');
       setLoading(false);
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         const { latitude, longitude } = position.coords;
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/v1/weather?lat=${latitude}&lon=${longitude}`);
-          if (!res.ok) throw new Error("Weather fetch failed");
-          const data: WeatherData = await res.json();
-          setWeather(data);
-        } catch (e) {
-          // Fallback to offline on network error
-          const params = getDefaultWeatherParams();
-          setOfflineForecast(predictWeatherOffline(params));
-        } finally {
-          setLoading(false);
-        }
+        setCoords({ lat: latitude, lon: longitude });
+        fetchByCoords(latitude, longitude);
       },
       (_err) => {
-        if (farmer?.location) {
-          fetchProfileWeather();
+        if (locationSource === 'Profile' && farmer?.location) {
+          fetchByCity(farmer.location.split(',')[0].trim());
           return;
         }
-        setError("Location access denied. Please allow location in your browser to see weather.");
+        setError('Location access denied. Please allow location in your browser to see weather.');
         setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
-  }, []);
+  }, [locationSource]);
 
   const handleAskAI = () => {
     if (!weather) return;
@@ -231,6 +232,21 @@ export default function WeatherPage() {
       <div>
         <h1 className="m-0 mb-1 text-2xl text-gray-900 font-bold">🌦️ Weather & Farm Advisor</h1>
         <p className="m-0 text-gray-500 text-sm">Live local weather with farming insights</p>
+      </div>
+
+      <div className="flex items-center gap-3 justify-end">
+        <div className="text-xs text-gray-500 mr-3">Source:</div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { localStorage.setItem('preferred_location_source', 'GPS'); setLocationSource('GPS'); }}
+            className={`px-3 py-1 rounded-full text-sm font-bold ${locationSource === 'GPS' ? 'bg-white/10 text-white' : 'bg-white text-gray-700 border'}`}
+          >GPS</button>
+          <button
+            onClick={() => { localStorage.setItem('preferred_location_source', 'Profile'); setLocationSource('Profile'); }}
+            className={`px-3 py-1 rounded-full text-sm font-bold ${locationSource === 'Profile' ? 'bg-white/10 text-white' : 'bg-white text-gray-700 border'}`}
+          >Profile</button>
+        </div>
+        <div className="ml-4 text-sm text-gray-600">Location: <strong className="text-gray-800">{weather.city || (coords ? `${coords.lat.toFixed(3)}, ${coords.lon.toFixed(3)}` : 'Unknown')}</strong></div>
       </div>
 
       {/* Main Weather Card */}

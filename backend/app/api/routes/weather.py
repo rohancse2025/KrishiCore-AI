@@ -106,7 +106,30 @@ async def get_weather(
     humidity   = data["main"]["humidity"]
     wind_speed = data["wind"]["speed"]
     condition  = data["weather"][0]["description"].title()
-    city       = data.get("name", "Unknown")
+
+    # OpenWeatherMap's `name` field can be a large administrative area.
+    # To get a more specific locality (village/town), attempt reverse geocoding
+    # using Nominatim (OpenStreetMap) and prefer village/town/hamlet if available.
+    city = data.get("name", "Unknown")
+    try:
+        coord = data.get('coord', {})
+        lat = coord.get('lat')
+        lon = coord.get('lon')
+        if lat is not None and lon is not None:
+            nom_url = f"https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat={lat}&lon={lon}"
+            req = urllib.request.Request(nom_url, headers={"User-Agent": "KisanCore/1.0 (+https://kisancore.ai)"})
+            with urllib.request.urlopen(req, timeout=5) as nomresp:
+                nom_raw = nomresp.read().decode()
+                nom = json.loads(nom_raw)
+                addr = nom.get('address', {}) or {}
+                # preference order for most specific locality
+                for key in ['village', 'town', 'hamlet', 'suburb', 'city', 'county', 'state_district', 'state']:
+                    if addr.get(key):
+                        city = addr.get(key)
+                        break
+    except Exception as _:
+        # If reverse geocoding fails, silently fall back to OWM's name
+        pass
 
     tip = get_farming_tip(temp, humidity, condition)
 
