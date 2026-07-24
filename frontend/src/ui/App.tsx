@@ -10,7 +10,6 @@ import ChatPage from "./pages/ChatPage";
 import MarketPage from "./pages/MarketPage";
 import ProfilePage from "./pages/ProfilePage";
 import { useTranslation } from "../hooks/useTranslation";
-import OfflineBanner from "./components/OfflineBanner";
 
 export default function App() {
   const navigate = useNavigate();
@@ -525,7 +524,6 @@ export default function App() {
         </div>
       )}
 
-      <OfflineBanner />
     </div>
   );
 }

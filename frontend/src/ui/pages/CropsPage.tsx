@@ -4,7 +4,6 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { useSensor } from '../../context/SensorContext';
 import SpeakButton from '../../components/SpeakButton';
 import CropSearchInput from '../../components/CropSearchInput';
-import { recommendCropOffline } from '../../services/offline-crop-rules';
 import { API_BASE_URL } from '../../config';
 
 // Helper for farmer-friendly hints
@@ -156,19 +155,8 @@ export default function CropsPage({ lang }: { lang: string }) {
 
     // Check if offline
     if (!navigator.onLine) {
-      const offline = recommendCropOffline(inputs.N, inputs.P, inputs.K, inputs.temperature, inputs.humidity, inputs.ph, inputs.rainfall);
-      setTimeout(() => {
-        setAiCrops([{
-          name: offline.crop,
-          emoji: '🌱',
-          reason: offline.reason,
-          water_needed: inputs.rainfall > 150 ? 'High' : 'Moderate',
-          best_season: 'Current',
-          profit_potential: 'High',
-          offline: true
-        }]);
-        setIsLoading(false);
-      }, 800); // Simulate local processing
+      setError("Internet connection is required to get AI crop recommendations. Please check your network and try again.");
+      setIsLoading(false);
       return;
     }
 
@@ -193,22 +181,10 @@ export default function CropsPage({ lang }: { lang: string }) {
       const data = await res.json();
       setAiCrops(data.crops || []);
     } catch (err: any) {
-      // Fallback to offline rule-based system on network error
-      const offline = recommendCropOffline(inputs.N, inputs.P, inputs.K, inputs.temperature, inputs.humidity, inputs.ph, inputs.rainfall);
-      setAiCrops([{
-        name: offline.crop,
-        emoji: '🌱',
-        reason: offline.reason,
-        water_needed: inputs.rainfall > 150 ? 'High' : 'Moderate',
-        best_season: 'Current',
-        profit_potential: 'High',
-        offline: true
-      }]);
-      
       if (err.name === 'AbortError') {
-        console.warn("Recommendation timed out, using offline fallback.");
+        setError("Recommendation request timed out. Please try again.");
       } else {
-        console.error("API failed, using offline fallback:", err.message);
+        setError(err.message || "Failed to fetch recommendation from server. Please check your internet connection.");
       }
     } finally {
       clearTimeout(timeoutId);

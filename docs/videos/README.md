@@ -1,65 +1,43 @@
-# Video Demonstration Guide: krishiCore AI 🎥🌾
-**Demonstration Script, Recording Guidelines & Video Assets**
+# krishiCore AI - Project Demo Video Guide
+**Guidelines & Script for Recording the Project Video**
 
-This directory is designated for your **krishiCore AI** video demonstration files, script guidelines, and reference links. Use this guide to record an impactful 5-minute video demonstration of the project.
-
----
-
-## 📹 Project Demo Video Links
-> [!TIP]
-> Once you record your demonstration video, upload it to YouTube, Google Drive, or Vimeo, and add your links below for easy access by evaluators:
-> * **Main Demo Video Link**: [Insert YouTube/Drive Link Here]
-> * **Backup Mirror Link**: [Insert Mirror Link Here]
+This guide will help you record a 5-minute video demonstration of **krishiCore AI** for your project submission.
 
 ---
 
-## 🎬 Suggested Video Structure & Script (5 Minutes)
+## 📹 Video Links
+* **YouTube/Drive Link**: [Paste your demo video link here]
+* **Demo Checklist**: [docs/assets/krishicore-demo-checklist.pdf](../assets/krishicore-demo-checklist.pdf)
 
-Here is a recommended storyboard/timeline for presenting **krishiCore AI** effectively:
+---
+
+## 🎬 Suggested Video Script & Flow (5 Minutes)
 
 ### 1. Introduction (0:00 - 0:45)
-* **Visual**: Presenter on camera or showing the krishiCore AI dashboard/logo.
-* **Audio Script**:
-  > "Hello! Today we are demonstrating **krishiCore AI**, an intelligent, offline-first smart agriculture ecosystem designed for remote farming communities. We combine Internet of Things (IoT) sensors, Machine Learning (ML), and Generative AI, resolving critical gaps in connectivity, soil analysis, and language barriers."
-* **Goal**: State the problem (connectivity and soil health) and introduce the solution immediately.
+* **What to show**: Open the React homepage and introduce yourself.
+* **Script**:
+  > "Hello everyone, my name is [Name] and today I am demonstrating our project **krishiCore AI**. It is an integrated smart farming system that combines IoT soil sensors, Machine Learning crop recommendation, and an AI chat assistant."
 
-### 2. Frontend PWA & Offline Demo (0:45 - 2:00)
-* **Visual**: Screen recording of the React web app. Demonstrate clicking through pages, activating dark mode, and changing languages. Show the application operating in offline mode.
-* **Action**:
-  - Toggle internet connection to **offline**.
-  - Show the Offline Banner appearing.
-  - Interact with the crop rules and database offline.
-  - Show multi-lingual voice queries (e.g., Hindi or Kannada) using the microphone button.
-* **Audio Script**:
-  > "Many farms have zero internet coverage, so we built krishiCore AI as a Progressive Web App (PWA). By caching assets and using local rule engines, the app remains fully functional offline. The farmer can also speak in their local language, which is translated dynamically using our translation layers."
+### 2. Crop Recommendation Demo (0:45 - 2:00)
+* **What to show**: Go to the Crops page, enter some NPK, pH, and weather values, and click Predict.
+* **Script**:
+  > "Here is our Crop Recommendation page. The farmer can input Nitrogen, Phosphorus, Potassium, temperature, and soil pH. When they click Predict, our backend loads the trained Random Forest model (`model.pkl`) and recommends the best crop that will grow in these conditions."
 
-### 3. ML Crop Recommendation (2:00 - 3:00)
-* **Visual**: Enter soil NPK, pH, temperature, and rainfall values in the Crop Recommendation page. Hit 'Predict' and show the recommended crop.
-* **Audio Script**:
-  > "Our crop recommender utilizes a Random Forest model trained on soil compositions. By inputting Nitrogen, Phosphorus, Potassium, soil pH, and temperature, the ML model predicts the most high-yielding crop, reducing the risk of harvest failure."
+### 3. AI Chat Assistant Demo (2:00 - 3:15)
+* **What to show**: Go to the Chat page. Click the flag to change languages (e.g. to Hindi or Kannada). Click the microphone button, ask a question (like "Which fertilizer is good for tomato?"), and play the voice answer back.
+* **Script**:
+  > "We also built an AI assistant. Farmers can select their local language and click the Speak button. It converts their speech to text, gets the answer from Groq LLM API, and speaks the response back to them. This helps farmers who cannot read or write."
 
-### 4. IoT Soil Node & Live Telemetry (3:00 - 4:00)
-* **Visual**: Show the ESP32 hardware device (if recorded physically) or show the live IoT dashboard updating as sensors send new values to FastAPI.
-* **Action**:
-  - Show the live sensor graph on the IoT page.
-  - (Optional) Dunk the soil moisture probe in water and show the graph spike in real-time.
-* **Audio Script**:
-  > "This telemetry is captured by our ESP32 IoT node deployed in the soil. Running our custom C++ firmware, it periodically posts soil conditions to the FastAPI backend, where they are rendered in real-time charts."
+### 4. IoT Soil Telemetry Demo (3:15 - 4:15)
+* **What to show**: Go to the IoT page. Show the live graphs updating.
+* **Script**:
+  > "Here is the IoT dashboard. The soil moisture and temperature readings sent by the ESP32 microcontroller are displayed in real-time. If the ESP32 sends a moisture level below 30%, our system immediately alerts the farmer."
 
-### 5. SMS & WhatsApp Alerts (4:00 - 4:40)
-* **Visual**: Show a mobile phone screen. Simulate/trigger dry soil conditions (moisture < 30%) and show a live SMS or WhatsApp alert arriving on the phone.
-* **Audio Script**:
-  > "When soil moisture drops below critical limits, the backend triggers alert handlers, sending automated warnings via Fast2SMS and Twilio WhatsApp to ensure the farmer takes action immediately, even if they aren't looking at the dashboard."
+### 5. SMS & WhatsApp Alerts Demo (4:15 - 4:45)
+* **What to show**: Show the phone screen where the Fast2SMS SMS alert or Twilio WhatsApp alert arrives when the soil is dry.
+* **Script**:
+  > "As you can see on the phone screen, when the sensor detects dry soil, the backend automatically triggers an SMS and WhatsApp message to the farmer's phone, telling them to check the irrigation."
 
-### 6. Conclusion (4:40 - 5:00)
-* **Visual**: Presenter on camera or architectural overview.
-* **Audio Script**:
-  > "By bridging the gap between hardware sensors, cloud intelligence, and offline web apps, krishiCore AI brings precision farming to every field. Thank you!"
-
----
-
-## 🎙️ Recording Tips
-1. **Resolution**: Record in full HD (1080p, 16:9 ratio).
-2. **Audio**: Use a clear external microphone if possible. Filter out background noise.
-3. **Pacing**: Speak clearly and slowly, especially when highlighting multilingual/translation features.
-4. **Interactive Demos**: Always show *live* inputs and actions rather than static screenshots.
+### 6. Conclusion (4:45 - 5:00)
+* **Script**:
+  > "That is the summary of krishiCore AI. Thank you very much!"

@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
 import { API_BASE_URL } from '../../config';
-import { chatOffline } from '../../lib/offline-chat';
 
 type Message = {
   id: string;
@@ -142,29 +141,15 @@ export default function ChatPage({ lang }: { lang: string }) {
     setMessages(prev => [...prev, userMsg]);
     setInput("");
 
-    // Check if offline → use local keyword AI
+    // Check if offline
     if (!navigator.onLine) {
-      setIsLoading(true);
-      try {
-        const offlineReply = await chatOffline(input.trim());
-        const aiMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          text: `📡 OFFLINE MODE\n\n${offlineReply}\n\n_Connect to internet for full AI conversation._`,
-          sender: 'ai',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prev => [...prev, aiMsg]);
-        speakText(offlineReply);
-      } catch {
-        setMessages(prev => [...prev, {
-          id: (Date.now() + 1).toString(),
-          text: '⚠️ Offline mode active. Type your question about crops, soil, water, fertilizer, or pests.',
-          sender: 'ai',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }]);
-      } finally {
-        setIsLoading(false);
-      }
+      const aiMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        text: '⚠️ You are currently offline. Please connect to the internet to chat with the AI assistant.',
+        sender: 'ai',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, aiMsg]);
       return;
     }
 
