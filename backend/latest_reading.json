@@ -1,1 +1,0 @@
-{"temperature": 0.0, "humidity": 0.0, "soil_moisture": 0.0, "irrigation_needed": false, "suggestion": "Waiting for sensor data...", "timestamp": "Never", "unix_timestamp": 0, "manual_override": "OFF", "override_expiry_time": 1779006945.6578083, "farmer_phones": [], "last_alert_time": 0}
