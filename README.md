@@ -13,7 +13,7 @@ This is our final year college project. It is a system built to help farmers mon
 * `frontend/` - React app with Vite and Tailwind. Contains UI screens for chat, weather, market prices, and profile.
 * `backend/` - FastAPI server files. Contains our ML model (`model.pkl`) and API routes.
 * `iot/` - Code for the ESP32 microcontroller.
-* `docs/` - Our project submission reports, PPT slides layout, and demo video script.
+* `docs/` - Our project submission reports, PPT slides layout.
 
 ---
 
