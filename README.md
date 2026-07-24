@@ -62,5 +62,4 @@ Open the ESP32 code located in `iot/firmware/KisanCore_ESP32/KisanCore_ESP32.ino
 Our project report, presentation slides guidelines, and video demo guide are all organized inside the `docs/` folder:
 * **Project Report**: [docs/report/README.md](./docs/report/README.md)
 * **Presentation Slides Layout**: [docs/presentation/README.md](./docs/presentation/README.md)
-* **Demo Video Script**: [docs/videos/README.md](./docs/videos/README.md)
-* **Demo Checklist**: [docs/assets/krishicore-demo-checklist.pdf](./docs/assets/krishicore-demo-checklist.pdf)
+
