@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useSpeech } from '../../hooks/useSpeech';
 import { API_BASE_URL } from '../../config';
 
 type Message = {
@@ -27,6 +28,7 @@ const LANG_OPTIONS = [
 
 export default function ChatPage({ lang }: { lang: string }) {
   const { t } = useTranslation(lang);
+  const { speak, stop } = useSpeech();
   const location = useLocation();
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState((location.state as any)?.prefill || "");
@@ -65,27 +67,8 @@ export default function ChatPage({ lang }: { lang: string }) {
   }, []);
 
   const speakText = (text: string) => {
-    if (!autoSpeak || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const cleanText = text.replace(/[*#]/g, '').trim();
-    if (!cleanText) return;
-    
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    const voices = window.speechSynthesis.getVoices();
-    
-    // Find voice matching select language
-    const currentLang = LANG_OPTIONS.find(l => l.code === chatLang);
-    const preferredLangCode = currentLang?.voice || 'en-IN';
-    
-    const preferredVoice = voices.find(v => v.lang.replace('_', '-') === preferredLangCode) || 
-                           voices.find(v => v.lang.replace('_', '-') === 'hi-IN') ||
-                           voices.find(v => v.lang.replace('_', '-') === 'en-IN') || 
-                           voices[0];
-                           
-    if (preferredVoice) utterance.voice = preferredVoice;
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    window.speechSynthesis.speak(utterance);
+    if (!autoSpeak) return;
+    speak(text, chatLang);
   };
 
   const toggleListening = () => {
@@ -332,7 +315,7 @@ export default function ChatPage({ lang }: { lang: string }) {
             <button
               onClick={() => {
                 setAutoSpeak(!autoSpeak);
-                if (autoSpeak && window.speechSynthesis) window.speechSynthesis.cancel();
+                if (autoSpeak) stop();
               }}
               className={`flex items-center gap-1.5 h-9 px-3.5 sm:px-5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest cursor-pointer transition-all border shadow-sm
                 ${autoSpeak ? 'bg-[#16a34a] text-white border-[#16a34a]' : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-slate-700'}`}
