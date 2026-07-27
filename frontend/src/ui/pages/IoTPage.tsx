@@ -134,6 +134,37 @@ export default function IoTPage({ lang }: { lang: string }) {
     }
   };
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
+  const handleSearchLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    setIsSearchingLocation(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(searchQuery)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const latNum = parseFloat(data[0].lat);
+          const lonNum = parseFloat(data[0].lon);
+          const coords = { lat: latNum, lon: lonNum };
+          setFarmCoords(coords);
+          localStorage.setItem('KrishiCore_farm_coords', JSON.stringify(coords));
+          setBoundaryPoints([]); // reset boundary
+          setIsEditingCoords(false);
+        } else {
+          alert("Location not found. Please try another query (e.g. Haveri, Karnataka) or type coordinates manually.");
+        }
+      }
+    } catch (err) {
+      alert("Error searching location. Please try manually.");
+    } finally {
+      setIsSearchingLocation(false);
+    }
+  };
+
   const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -613,57 +644,92 @@ export default function IoTPage({ lang }: { lang: string }) {
                   <div>
                     <p className="m-0 text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Field Coordinates</p>
                     {isEditingCoords ? (
-                      <div className="flex gap-2 items-center flex-wrap mt-1">
-                        <input 
-                          type="text" 
-                          placeholder="Lat" 
-                          value={inputLat}
-                          onChange={(e) => setInputLat(e.target.value)}
-                          className="bg-slate-900/90 text-white text-xs px-2 py-1 rounded border border-white/20 w-16 pointer-events-auto text-center"
-                        />
-                        <input 
-                          type="text" 
-                          placeholder="Lon" 
-                          value={inputLon}
-                          onChange={(e) => setInputLon(e.target.value)}
-                          className="bg-slate-900/90 text-white text-xs px-2 py-1 rounded border border-white/20 w-16 pointer-events-auto text-center"
-                        />
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleSaveCoords(); }}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2 py-1 rounded pointer-events-auto active:scale-95 transition-all"
+                      <div 
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex flex-col gap-2 bg-slate-950/95 p-3 rounded-xl border border-white/20 mt-2 pointer-events-auto max-w-xs text-left"
+                      >
+                        {/* Search Location by Name */}
+                        <form 
+                          onSubmit={handleSearchLocation} 
+                          className="flex gap-1"
                         >
-                          Save
-                        </button>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (navigator.geolocation) {
-                              try {
-                                const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-                                  navigator.geolocation.getCurrentPosition(resolve, reject, {
-                                    enableHighAccuracy: true,
-                                    timeout: 8000,
-                                    maximumAge: 0
+                          <input 
+                            type="text" 
+                            placeholder="Search town (e.g. Haveri)" 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded border border-white/10 flex-1 outline-none focus:border-emerald-500"
+                          />
+                          <button 
+                            type="submit"
+                            disabled={isSearchingLocation}
+                            className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-[10px] font-bold px-3 py-1.5 rounded active:scale-95 transition-all"
+                          >
+                            {isSearchingLocation ? "..." : "Search"}
+                          </button>
+                        </form>
+                        
+                        <div className="flex items-center justify-center text-[9px] text-gray-500 font-black font-mono my-0.5 uppercase tracking-wider">— Or Enter GPS —</div>
+                        
+                        {/* Manual Coords */}
+                        <div className="flex gap-1.5 items-center">
+                          <input 
+                            type="text" 
+                            placeholder="Lat" 
+                            value={inputLat}
+                            onChange={(e) => setInputLat(e.target.value)}
+                            className="bg-slate-900 text-white text-xs px-2 py-1 rounded border border-white/10 w-20 text-center outline-none focus:border-emerald-500"
+                          />
+                          <input 
+                            type="text" 
+                            placeholder="Lon" 
+                            value={inputLon}
+                            onChange={(e) => setInputLon(e.target.value)}
+                            className="bg-slate-900 text-white text-xs px-2 py-1 rounded border border-white/10 w-20 text-center outline-none focus:border-emerald-500"
+                          />
+                          <button 
+                            type="button"
+                            onClick={handleSaveCoords}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-3 py-1 rounded active:scale-95 transition-all"
+                          >
+                            Apply
+                          </button>
+                        </div>
+
+                        {/* GPS and Cancel Buttons */}
+                        <div className="flex gap-2 justify-between items-center mt-1 border-t border-white/10 pt-2">
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (navigator.geolocation) {
+                                try {
+                                  const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+                                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                      enableHighAccuracy: true,
+                                      timeout: 8000,
+                                      maximumAge: 0
+                                    });
                                   });
-                                });
-                                setInputLat(pos.coords.latitude.toFixed(6));
-                                setInputLon(pos.coords.longitude.toFixed(6));
-                              } catch (err) {
-                                alert("Failed to fetch GPS coordinates. Please type manually.");
+                                  setInputLat(pos.coords.latitude.toFixed(6));
+                                  setInputLon(pos.coords.longitude.toFixed(6));
+                                } catch (err) {
+                                  alert("Failed to fetch GPS coordinates. Please type manually.");
+                                }
                               }
-                            }
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold px-2 py-1 rounded pointer-events-auto active:scale-95 transition-all"
-                          title="Get Current GPS Coordinates"
-                        >
-                          📍 GPS
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); setIsEditingCoords(false); }}
-                          className="bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded pointer-events-auto active:scale-95 transition-all"
-                        >
-                          Cancel
-                        </button>
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold px-2 py-1 rounded active:scale-95 transition-all"
+                          >
+                            📍 Auto GPS
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => setIsEditingCoords(false)}
+                            className="bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold px-2.5 py-1 rounded active:scale-95 transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 mt-1">
@@ -675,6 +741,7 @@ export default function IoTPage({ lang }: { lang: string }) {
                             e.stopPropagation();
                             setInputLat(satelliteData.lat.toFixed(6));
                             setInputLon(satelliteData.lon.toFixed(6));
+                            setSearchQuery("");
                             setIsEditingCoords(true);
                           }}
                           className="bg-white/15 hover:bg-white/25 text-white border-none rounded px-2.5 py-1 text-[10px] font-bold pointer-events-auto cursor-pointer transition-all active:scale-95"
