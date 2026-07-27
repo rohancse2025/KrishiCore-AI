@@ -58,7 +58,7 @@ async def chat_endpoint(request: ChatRequest):
             
             # Use vision model if image is present
             if request.image:
-                model = "meta-llama/llama-4-scout-17b-16e-instruct" 
+                model = "qwen/qwen3.6-27b" 
                 messages.append({
                     "role": "user",
                     "content": [

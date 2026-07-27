@@ -5,6 +5,69 @@ import { useSensor } from '../../context/SensorContext';
 import SpeakButton from '../../components/SpeakButton';
 import CropSearchInput from '../../components/CropSearchInput';
 import { API_BASE_URL } from '../../config';
+import * as tf from '@tensorflow/tfjs';
+
+// Crop details with metadata for rendering recommendations
+const CROP_METADATA: Record<string, { emoji: string; reason: string; water_needed: string; best_season: string; profit_potential: string }> = {
+  "Rice": { emoji: "🌾", reason: "Thrives in hot, humid climates with heavy rainfall and standing water.", water_needed: "High (900mm+)", best_season: "Kharif (June-Oct)", profit_potential: "Medium" },
+  "Wheat": { emoji: "🌾", reason: "Suited for cool winter temperatures and moderate moisture.", water_needed: "Medium (450-650mm)", best_season: "Rabi (Nov-Apr)", profit_potential: "High" },
+  "Maize": { emoji: "🌽", reason: "Grows well in warm weather with moderate and distributed rainfall.", water_needed: "Medium (500-800mm)", best_season: "Kharif (June-Oct)", profit_potential: "Medium" },
+  "Chickpea": { emoji: "🌱", reason: "Highly drought-tolerant crop suitable for dry winter seasons.", water_needed: "Low (200-400mm)", best_season: "Rabi (Nov-Apr)", profit_potential: "High" },
+  "Kidney Beans": { emoji: "🫘", reason: "Requires mild weather and well-drained loamy soils.", water_needed: "Medium (400-600mm)", best_season: "Rabi (Nov-Apr)", profit_potential: "High" },
+  "Pigeon Peas": { emoji: "🫘", reason: "Deep-root system makes it tolerant to dry spells.", water_needed: "Medium (500-700mm)", best_season: "Kharif (June-Oct)", profit_potential: "High" },
+  "Moth Beans": { emoji: "🌱", reason: "Extremely drought-resistant legume ideal for arid zones.", water_needed: "Low (200-300mm)", best_season: "Kharif (June-Oct)", profit_potential: "Medium" },
+  "Mung Bean": { emoji: "🌱", reason: "Short-duration crop suited for dry, warm conditions.", water_needed: "Low (300-500mm)", best_season: "Kharif/Zaid", profit_potential: "Medium" },
+  "Black Gram": { emoji: "🌱", reason: "Adapted to tropical areas; improves soil nitrogen content.", water_needed: "Low (400-600mm)", best_season: "Kharif (June-Oct)", profit_potential: "Medium" },
+  "Lentil": { emoji: "🍲", reason: "Prefers cold climates and is highly tolerant to low water.", water_needed: "Low (350-500mm)", best_season: "Rabi (Nov-Apr)", profit_potential: "High" },
+  "Pomegranate": { emoji: "🍎", reason: "Durable fruit crop that flourishes in semi-arid environments.", water_needed: "Low (500-700mm)", best_season: "Year-round", profit_potential: "High" },
+  "Banana": { emoji: "🍌", reason: "Tropical crop requiring continuous heat and substantial watering.", water_needed: "High (1200-2200mm)", best_season: "Year-round", profit_potential: "High" },
+  "Mango": { emoji: "🥭", reason: "Perennial fruit tree thriving in dry summers and warm weather.", water_needed: "Medium (700-1000mm)", best_season: "Summer", profit_potential: "High" },
+  "Grapes": { emoji: "🍇", reason: "Vines require dry, sunny weather and well-drained soils.", water_needed: "Medium (500-600mm)", best_season: "Rabi (Nov-Apr)", profit_potential: "High" },
+  "Watermelon": { emoji: "🍉", reason: "Requires long periods of warm weather and sandy loam soil.", water_needed: "Low (400-600mm)", best_season: "Zaid (Mar-Jun)", profit_potential: "High" },
+  "Muskmelon": { emoji: "🍈", reason: "Thrives in warm, dry weather with high light intensity.", water_needed: "Low (300-400mm)", best_season: "Zaid (Mar-Jun)", profit_potential: "High" },
+  "Apple": { emoji: "🍎", reason: "Cold-climate crop requiring cool winter chilling hours.", water_needed: "Medium (700-1000mm)", best_season: "Rabi (Nov-Apr)", profit_potential: "High" },
+  "Orange": { emoji: "🍊", reason: "Requires warm sub-tropical climate and moderate moisture.", water_needed: "Medium (800-1200mm)", best_season: "Year-round", profit_potential: "High" },
+  "Papaya": { emoji: "🥭", reason: "Fast-growing plant requiring constant heat and well-drained soil.", water_needed: "Medium (1000-1500mm)", best_season: "Year-round", profit_potential: "High" },
+  "Coconut": { emoji: "🥥", reason: "Coastal palm that thrives in sandy soils with high humidity.", water_needed: "High (1500-2500mm)", best_season: "Year-round", profit_potential: "High" },
+  "Cotton": { emoji: "☁️", reason: "Cash crop requiring a long frost-free period and moderate rain.", water_needed: "Medium (700-1000mm)", best_season: "Kharif (June-Oct)", profit_potential: "High" },
+  "Jute": { emoji: "🌿", reason: "Requires hot, humid conditions and heavy rainfall.", water_needed: "High (1200-1800mm)", best_season: "Kharif (June-Oct)", profit_potential: "Medium" },
+  "Coffee": { emoji: "☕", reason: "Requires shade, high rainfall, and cool upland temperatures.", water_needed: "High (1500-2000mm)", best_season: "Kharif (June-Oct)", profit_potential: "High" }
+};
+
+const CROP_NAMES = Object.keys(CROP_METADATA);
+
+// Centroids for each class: N, P, K, temp, humidity, pH, rainfall
+const CROP_CENTROIDS = [
+  [80, 47, 40, 23, 82, 6.4, 236], // Rice
+  [70, 46, 34, 18, 58, 6.5, 72],  // Wheat
+  [77, 48, 19, 22, 65, 6.2, 84],  // Maize
+  [40, 67, 79, 20, 16, 7.3, 80],  // Chickpea
+  [20, 67, 55, 20, 21, 5.7, 105], // Kidney Beans
+  [20, 67, 20, 27, 48, 5.7, 149], // Pigeon Peas
+  [21, 48, 20, 28, 53, 6.8, 51],  // Moth Beans
+  [20, 47, 19, 28, 85, 6.7, 48],  // Mung Bean
+  [40, 47, 19, 29, 65, 7.1, 67],  // Black Gram
+  [18, 68, 19, 24, 64, 6.9, 45],  // Lentil
+  [20, 18, 40, 22, 90, 6.4, 107], // Pomegranate
+  [100, 82, 50, 27, 80, 6.0, 104], // Banana
+  [20, 27, 30, 31, 50, 5.7, 94],  // Mango
+  [23, 132, 201, 23, 81, 6.0, 69], // Grapes
+  [99, 17, 50, 25, 85, 6.4, 50],  // Watermelon
+  [100, 17, 50, 28, 92, 6.3, 22],  // Muskmelon
+  [20, 136, 199, 22, 92, 5.9, 112], // Apple
+  [39, 16, 10, 22, 92, 7.0, 110],  // Orange
+  [49, 59, 50, 33, 92, 6.7, 142],  // Papaya
+  [21, 16, 30, 27, 94, 5.9, 175],  // Coconut
+  [117, 46, 19, 23, 79, 6.9, 80],  // Cotton
+  [78, 46, 39, 24, 79, 6.7, 174],  // Jute
+  [101, 28, 29, 25, 57, 6.7, 158]  // Coffee
+];
+
+// Feature normalization standard deviations
+const FEATURE_SCALES = [30, 30, 50, 5, 20, 0.8, 50];
+
+// Feature importance weights
+const FEATURE_IMPORTANCE = [0.15, 0.12, 0.14, 0.18, 0.16, 0.10, 0.15];
 
 // Helper for farmer-friendly hints
 const getSliderHint = (name: string, value: number) => {
@@ -153,10 +216,74 @@ export default function CropsPage({ lang }: { lang: string }) {
     setAiCrops([]);
     setError(null);
 
-    // Check if offline
+    // Check if offline - Run TF.js inference local to browser
     if (!navigator.onLine) {
-      setError("Internet connection is required to get AI crop recommendations. Please check your network and try again.");
-      setIsLoading(false);
+      try {
+        const inputsArray = [
+          inputs.N, 
+          inputs.P, 
+          inputs.K, 
+          inputs.temperature, 
+          inputs.humidity, 
+          inputs.ph, 
+          inputs.rainfall
+        ];
+        
+        // Run TF.js inference
+        const scores = tf.tidy(() => {
+          const inputTensor = tf.tensor1d(inputsArray);
+          const centroidsTensor = tf.tensor2d(CROP_CENTROIDS);
+          const scalesTensor = tf.tensor1d(FEATURE_SCALES);
+          const importanceTensor = tf.tensor1d(FEATURE_IMPORTANCE);
+
+          // Standardize features by dividing by standard deviations
+          const normalizedInput = inputTensor.div(scalesTensor);
+          const normalizedCentroids = centroidsTensor.div(scalesTensor);
+
+          // Calculate squared distance
+          const diff = normalizedCentroids.sub(normalizedInput);
+          const squaredDiff = diff.square();
+
+          // Multiply by feature importance and sum across features (axis 1)
+          const weightedDiff = squaredDiff.mul(importanceTensor);
+          const sumDiff = weightedDiff.sum(1);
+
+          // Similarity score = exp(-distance) (smaller distance = higher similarity)
+          const similarities = tf.exp(sumDiff.neg());
+          
+          return similarities.arraySync() as number[];
+        });
+
+        // Map scores to crops and sort
+        const mappedCrops = CROP_NAMES.map((name, index) => ({
+          name,
+          score: scores[index]
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+
+        const resultCrops = mappedCrops.map(item => {
+          const meta = CROP_METADATA[item.name];
+          return {
+            name: item.name,
+            emoji: meta.emoji,
+            reason: meta.reason,
+            water_needed: meta.water_needed,
+            best_season: meta.best_season,
+            profit_potential: meta.profit_potential,
+            offline: true
+          };
+        });
+
+        // Add small artificial delay for realistic UX loader
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setAiCrops(resultCrops);
+      } catch (err: any) {
+        console.error("TF.js Inference Error:", err);
+        setError("Offline inference failed: " + err.message);
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
