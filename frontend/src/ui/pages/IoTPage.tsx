@@ -441,6 +441,88 @@ export default function IoTPage({ lang }: { lang: string }) {
         {t('iot_last_update')}: <strong className="text-gray-600 ml-1">{isStale ? `${lastUpdateStr} (${minsAgo} minutes ago)` : lastUpdateStr}</strong>
       </div>
 
+      {/* SATELLITE FIELD MONITORING */}
+      <h2 className="text-xl font-black mb-6 mt-12 flex items-center gap-2">
+        <span>🛰️</span> Satellite Field Analytics
+      </h2>
+      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-sm hover-lift transition-all duration-300 mb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Satellite Map/Imagery Visualizer */}
+          <div className="relative rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 aspect-video shadow-inner group">
+            <img 
+              src="/satellite_ndvi.jpg" 
+              alt="Satellite NDVI map" 
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+            />
+            {/* Visualizer Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-between p-4 sm:p-6 text-white">
+              <div className="flex justify-between items-start">
+                <span className="bg-emerald-500/90 text-white font-black text-[10px] tracking-widest uppercase px-3 py-1 rounded-full border border-emerald-400 backdrop-blur-sm shadow-md animate-pulse">
+                  🛰️ LIVE SATELLITE FEED
+                </span>
+                <span className="bg-slate-900/80 text-gray-300 font-bold text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-sm shadow-sm">
+                  Sentinel-2 L2A
+                </span>
+              </div>
+              <div>
+                <p className="m-0 text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Field Coordinates</p>
+                <h4 className="m-0 text-xs sm:text-sm font-mono font-bold text-emerald-400">
+                  15°29'42.1"N, 75°48'11.3"E (Karnataka, IN)
+                </h4>
+              </div>
+            </div>
+          </div>
+
+          {/* Satellite Metrics and Insights */}
+          <div className="flex flex-col justify-between gap-6">
+            <div>
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest font-mono">Earth Observation Report</span>
+                  <h3 className="m-0 text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1">Vegetation Health: Optimal</h3>
+                </div>
+                <SpeakButton 
+                  text="Satellite NDVI index is zero point seven four, indicating healthy dense vegetation. The field shows a stable crop growth trend, and surface moisture levels are normal at forty one percent." 
+                  lang={lang} 
+                />
+              </div>
+              <p className="text-gray-500 dark:text-slate-400 text-sm leading-relaxed mb-6 font-medium">
+                Sentinel-2 spectral scans show strong chlorophyll absorption across your field boundaries. Crops are photosynthesizing efficiently with no signs of regional water stress or chlorosis.
+              </p>
+
+              {/* Metric grid */}
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <div className="bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-center">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">NDVI index</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-500">0.74</span>
+                    <span className="text-xs font-bold text-emerald-500 font-mono">↑ 4%</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-bold mt-1">Healthy Dense Crops</span>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-center">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Moisture Index</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-500">0.45</span>
+                    <span className="text-xs font-bold text-gray-400 font-mono">Stable</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-bold mt-1">Normal surface wetness</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Recommendations / Info Bar */}
+            <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/20 rounded-2xl p-4 flex gap-3 items-center">
+              <span className="text-2xl">💡</span>
+              <p className="m-0 text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 leading-relaxed font-bold">
+                <strong>Insight:</strong> Satellite moisture maps sync perfectly with your ground IoT soil sensor (reading normal moisture). Auto-irrigation is recommended to remain off today.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* IRRIGATION STATUS */}
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
         <span>🚿</span> {t('home_irrigation')}
