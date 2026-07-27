@@ -102,6 +102,46 @@ export default function IoTPage({ lang }: { lang: string }) {
   const [overrideSeconds, setOverrideSeconds] = useState(0);
   const [isSendingOverride, setIsSendingOverride] = useState(false);
 
+  const [satelliteData, setSatelliteData] = useState<any>(null);
+  const [isSatelliteLoading, setIsSatelliteLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'ndvi' | 'truecolor'>('ndvi');
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCoordsAndSatellite = async () => {
+      setIsSatelliteLoading(true);
+      let useLat = 15.3647;
+      let useLon = 75.6403;
+      
+      if (navigator.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
+          });
+          useLat = pos.coords.latitude;
+          useLon = pos.coords.longitude;
+        } catch (err) {
+          console.warn("Geolocation failed, using default coords");
+        }
+      }
+      
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/iot/satellite?lat=${useLat}&lon=${useLon}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) setSatelliteData(data);
+        }
+      } catch (e) {
+        console.error("Error loading satellite data", e);
+      } finally {
+        if (isMounted) setIsSatelliteLoading(false);
+      }
+    };
+    
+    loadCoordsAndSatellite();
+    return () => { isMounted = false; };
+  }, []);
+
   const handleOverride = async (command: string) => {
     setIsSendingOverride(true);
 
@@ -445,83 +485,134 @@ export default function IoTPage({ lang }: { lang: string }) {
       <h2 className="text-xl font-black mb-6 mt-12 flex items-center gap-2">
         <span>🛰️</span> Satellite Field Analytics
       </h2>
-      <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-sm hover-lift transition-all duration-300 mb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Satellite Map/Imagery Visualizer */}
-          <div className="relative rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 aspect-video shadow-inner group">
-            <img 
-              src="/satellite_ndvi.jpg" 
-              alt="Satellite NDVI map" 
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-            />
-            {/* Visualizer Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-between p-4 sm:p-6 text-white">
-              <div className="flex justify-between items-start">
-                <span className="bg-emerald-500/90 text-white font-black text-[10px] tracking-widest uppercase px-3 py-1 rounded-full border border-emerald-400 backdrop-blur-sm shadow-md animate-pulse">
-                  🛰️ LIVE SATELLITE FEED
-                </span>
-                <span className="bg-slate-900/80 text-gray-300 font-bold text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-sm shadow-sm">
-                  Sentinel-2 L2A
-                </span>
-              </div>
+      
+      {isSatelliteLoading || !satelliteData ? (
+        <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-sm animate-pulse mb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-gray-200 dark:bg-slate-700 rounded-2xl aspect-video" />
+            <div className="flex flex-col justify-between gap-6 py-2">
               <div>
-                <p className="m-0 text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Field Coordinates</p>
-                <h4 className="m-0 text-xs sm:text-sm font-mono font-bold text-emerald-400">
-                  15°29'42.1"N, 75°48'11.3"E (Karnataka, IN)
-                </h4>
-              </div>
-            </div>
-          </div>
-
-          {/* Satellite Metrics and Insights */}
-          <div className="flex flex-col justify-between gap-6">
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest font-mono">Earth Observation Report</span>
-                  <h3 className="m-0 text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1">Vegetation Health: Optimal</h3>
-                </div>
-                <SpeakButton 
-                  text="Satellite NDVI index is zero point seven four, indicating healthy dense vegetation. The field shows a stable crop growth trend, and surface moisture levels are normal at forty one percent." 
-                  lang={lang} 
-                />
-              </div>
-              <p className="text-gray-500 dark:text-slate-400 text-sm leading-relaxed mb-6 font-medium">
-                Sentinel-2 spectral scans show strong chlorophyll absorption across your field boundaries. Crops are photosynthesizing efficiently with no signs of regional water stress or chlorosis.
-              </p>
-
-              {/* Metric grid */}
-              <div className="grid grid-cols-2 gap-4 mb-2">
-                <div className="bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-center">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">NDVI index</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-500">0.74</span>
-                    <span className="text-xs font-bold text-emerald-500 font-mono">↑ 4%</span>
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-bold mt-1">Healthy Dense Crops</span>
-                </div>
-
-                <div className="bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-center">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Moisture Index</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-500">0.45</span>
-                    <span className="text-xs font-bold text-gray-400 font-mono">Stable</span>
-                  </div>
-                  <span className="text-[10px] text-gray-400 font-bold mt-1">Normal surface wetness</span>
+                <div className="w-1/3 h-4 bg-gray-200 dark:bg-slate-700 rounded mb-2" />
+                <div className="w-2/3 h-8 bg-gray-200 dark:bg-slate-700 rounded mb-6" />
+                <div className="w-full h-16 bg-gray-100 dark:bg-slate-900 rounded mb-6" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="h-20 bg-gray-100 dark:bg-slate-900 rounded" />
+                  <div className="h-20 bg-gray-100 dark:bg-slate-900 rounded" />
                 </div>
               </div>
-            </div>
-
-            {/* Recommendations / Info Bar */}
-            <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/20 rounded-2xl p-4 flex gap-3 items-center">
-              <span className="text-2xl">💡</span>
-              <p className="m-0 text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 leading-relaxed font-bold">
-                <strong>Insight:</strong> Satellite moisture maps sync perfectly with your ground IoT soil sensor (reading normal moisture). Auto-irrigation is recommended to remain off today.
-              </p>
+              <div className="h-14 bg-gray-100 dark:bg-slate-900 rounded-2xl" />
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-sm hover-lift transition-all duration-300 mb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Satellite Map/Imagery Visualizer */}
+            <div className="flex flex-col gap-4">
+              <div className="relative rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 aspect-video shadow-inner group">
+                <img 
+                  src={viewMode === 'ndvi' ? satelliteData.ndvi_image : satelliteData.truecolor_image} 
+                  alt={`Satellite ${viewMode} map`} 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                />
+                {/* Visualizer Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-between p-4 sm:p-6 text-white">
+                  <div className="flex justify-between items-start">
+                    <span className="bg-emerald-500/90 text-white font-black text-[10px] tracking-widest uppercase px-3 py-1 rounded-full border border-emerald-400 backdrop-blur-sm shadow-md animate-pulse">
+                      🛰️ LIVE SATELLITE FEED
+                    </span>
+                    <span className="bg-slate-900/80 text-gray-300 font-bold text-[10px] px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-sm shadow-sm">
+                      {satelliteData.satellite_name}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="m-0 text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Field Coordinates</p>
+                    <h4 className="m-0 text-xs sm:text-sm font-mono font-bold text-emerald-400">
+                      {satelliteData.lat.toFixed(4)}° N, {satelliteData.lon.toFixed(4)}° E (Live Field)
+                    </h4>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Map Layer Switcher */}
+              <div className="flex justify-center gap-2">
+                <button
+                  onClick={() => setViewMode('ndvi')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border
+                    ${viewMode === 'ndvi' 
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                      : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-slate-700 hover:bg-green-50'}`}
+                >
+                  🟢 NDVI Index Layer
+                </button>
+                <button
+                  onClick={() => setViewMode('truecolor')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border
+                    ${viewMode === 'truecolor' 
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                      : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-slate-700 hover:bg-green-50'}`}
+                >
+                  🌐 True Color Layer
+                </button>
+              </div>
+            </div>
+
+            {/* Satellite Metrics and Insights */}
+            <div className="flex flex-col justify-between gap-6">
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest font-mono">Earth Observation Report</span>
+                    <h3 className="m-0 text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1">
+                      Vegetation Health: {satelliteData.ndvi_index > 0.6 ? "Optimal" : satelliteData.ndvi_index > 0.35 ? "Moderate" : "Stressed"}
+                    </h3>
+                  </div>
+                  <SpeakButton 
+                    text={`Satellite ${satelliteData.satellite_name} observation report. NDVI vegetation health index is ${satelliteData.ndvi_index}, indicating ${satelliteData.ndvi_index > 0.6 ? "optimal crop density" : "stable growth"}. Surface moisture is normal at ${Math.round(satelliteData.moisture_index * 100)} percent. Cloud cover is ${satelliteData.cloud_cover} percent.`} 
+                    lang={lang} 
+                  />
+                </div>
+                <p className="text-gray-500 dark:text-slate-400 text-sm leading-relaxed mb-6 font-medium">
+                  Spectrometer scans from {satelliteData.pass_date} show {satelliteData.ndvi_index > 0.6 ? 'strong' : 'moderate'} chlorophyll absorption across your field boundaries. Clouds are at {satelliteData.cloud_cover}%. {satelliteData.is_fallback ? "Showing high-resolution regional reference map." : "Showing fresh Sentinel-2 analysis."}
+                </p>
+
+                {/* Metric grid */}
+                <div className="grid grid-cols-2 gap-4 mb-2">
+                  <div className="bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-center">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">NDVI index</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-500">{satelliteData.ndvi_index}</span>
+                      <span className="text-xs font-bold text-emerald-500 font-mono">
+                        {satelliteData.ndvi_index > 0.6 ? "↑ 4%" : "Stable"}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-bold mt-1">
+                      {satelliteData.ndvi_index > 0.6 ? "Healthy Dense Crops" : "Normal Vegetation"}
+                    </span>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-center">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Moisture Index</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-500">{satelliteData.moisture_index}</span>
+                      <span className="text-xs font-bold text-gray-400 font-mono">Stable</span>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-bold mt-1">Normal surface wetness</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommendations / Info Bar */}
+              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/20 rounded-2xl p-4 flex gap-3 items-center">
+                <span className="text-2xl">💡</span>
+                <p className="m-0 text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 leading-relaxed font-bold">
+                  <strong>Insight:</strong> Satellite moisture maps sync perfectly with your ground IoT soil sensor (reading normal moisture). Auto-irrigation is recommended to remain off today.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* IRRIGATION STATUS */}
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
