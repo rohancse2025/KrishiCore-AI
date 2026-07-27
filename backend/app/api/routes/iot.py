@@ -330,8 +330,8 @@ def get_or_create_polygon(api_key: str, lat: float, lon: float) -> str:
 @router.get("/satellite")
 async def get_satellite_data(lat: float, lon: float):
     # Calculate tile coordinates for Esri fallback mapping
-    tile_x, tile_y = get_tile_coords(lat, lon, zoom=16)
-    esri_satellite_url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/{tile_y}/{tile_x}"
+    tile_x, tile_y = get_tile_coords(lat, lon, zoom=18)
+    esri_satellite_url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/18/{tile_y}/{tile_x}"
     
     api_key = os.environ.get("OPENWEATHER_API_KEY", "").strip()
     if not api_key:

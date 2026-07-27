@@ -735,16 +735,16 @@ export default function IoTPage({ lang }: { lang: string }) {
                   <div>
                     <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest font-mono">Earth Observation Report</span>
                     <h3 className="m-0 text-xl sm:text-2xl font-black text-gray-900 dark:text-white mt-1">
-                      Vegetation Health: {satelliteData.ndvi_index > 0.6 ? "Optimal" : satelliteData.ndvi_index > 0.35 ? "Moderate" : "Stressed"}
+                      Vegetation Health: {satelliteData.ndvi_index > 0.6 ? "Good (Healthy)" : satelliteData.ndvi_index > 0.35 ? "Fair (Normal)" : "Low (Stressed)"}
                     </h3>
                   </div>
                   <SpeakButton 
-                    text={`Satellite ${satelliteData.satellite_name} observation report. NDVI vegetation health index is ${satelliteData.ndvi_index}, indicating ${satelliteData.ndvi_index > 0.6 ? "optimal crop density" : "stable growth"}. Surface moisture is normal at ${Math.round(satelliteData.moisture_index * 100)} percent. Cloud cover is ${satelliteData.cloud_cover} percent.`} 
+                    text={`Satellite report. Vegetation health is ${satelliteData.ndvi_index > 0.6 ? "good and healthy" : "fair"}. Crops are growing well. Surface moisture is stable at ${Math.round(satelliteData.moisture_index * 100)} percent.`} 
                     lang={lang} 
                   />
                 </div>
                 <p className="text-gray-500 dark:text-slate-400 text-sm leading-relaxed mb-6 font-medium">
-                  Spectrometer scans from {satelliteData.pass_date} show {satelliteData.ndvi_index > 0.6 ? 'strong' : 'moderate'} chlorophyll absorption across your field boundaries. Clouds are at {satelliteData.cloud_cover}%. {satelliteData.is_fallback ? "Showing high-resolution regional reference map." : "Showing fresh Sentinel-2 analysis."}
+                  The satellite scan from {satelliteData.pass_date} shows that your crops are green and photosynthesizing well. There are no signs of severe crop stress, leaf yellowing, or dry patches. {satelliteData.is_fallback ? "Showing high-resolution regional map." : "Showing fresh Sentinel-2 analysis."}
                 </p>
 
                 {/* Metric grid */}
@@ -758,7 +758,7 @@ export default function IoTPage({ lang }: { lang: string }) {
                       </span>
                     </div>
                     <span className="text-[10px] text-gray-400 font-bold mt-1">
-                      {satelliteData.ndvi_index > 0.6 ? "Healthy Dense Crops" : "Normal Vegetation"}
+                      {satelliteData.ndvi_index > 0.6 ? "Healthy Green Crops" : "Normal Growth"}
                     </span>
                   </div>
 
@@ -774,10 +774,18 @@ export default function IoTPage({ lang }: { lang: string }) {
               </div>
 
               {/* Recommendations / Info Bar */}
-              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/20 rounded-2xl p-4 flex gap-3 items-center">
+              <div className={`border rounded-2xl p-4 flex gap-3 items-center ${isOnline && sensorData?.soil_moisture !== null && sensorData.soil_moisture !== -999 ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-100/50 dark:border-emerald-900/20 text-emerald-800 dark:text-emerald-300' : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-100/50 dark:border-amber-900/20 text-amber-800 dark:text-amber-300'}`}>
                 <span className="text-2xl">💡</span>
-                <p className="m-0 text-xs sm:text-sm text-emerald-800 dark:text-emerald-300 leading-relaxed font-bold">
-                  <strong>Insight:</strong> Satellite moisture maps sync perfectly with your ground IoT soil sensor (reading normal moisture). Auto-irrigation is recommended to remain off today.
+                <p className="m-0 text-xs sm:text-sm leading-relaxed font-bold">
+                  {isOnline && sensorData?.soil_moisture !== null && sensorData.soil_moisture !== -999 ? (
+                    <>
+                      <strong>Insight:</strong> Satellite moisture matches your ground IoT soil sensor ({sensorData.soil_moisture}% moisture). Auto-irrigation is working correctly.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Insight:</strong> Ground IoT sensor is offline. Please turn on your ESP32 board to link root-level moisture sensors with these satellite maps.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
