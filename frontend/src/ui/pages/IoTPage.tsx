@@ -593,12 +593,12 @@ export default function IoTPage({ lang }: { lang: string }) {
             <div className="flex flex-col gap-4">
               <div 
                 onClick={handleMapClick}
-                className="relative rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 aspect-video shadow-inner group cursor-crosshair select-none"
+                className="relative rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 aspect-video shadow-inner group cursor-crosshair"
               >
                 <img 
                   src={viewMode === 'ndvi' ? satelliteData.ndvi_image : satelliteData.truecolor_image} 
                   alt={`Satellite ${viewMode} map`} 
-                  className="w-full h-full object-cover" 
+                  className="w-full h-full object-cover select-none" 
                   draggable="false"
                 />
                 
@@ -658,7 +658,7 @@ export default function IoTPage({ lang }: { lang: string }) {
                             placeholder="Search town (e.g. Haveri)" 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded border border-white/10 flex-1 outline-none focus:border-emerald-500"
+                            className="bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded border border-white/10 flex-1 outline-none focus:border-emerald-500 select-text pointer-events-auto"
                           />
                           <button 
                             type="submit"
@@ -678,14 +678,14 @@ export default function IoTPage({ lang }: { lang: string }) {
                             placeholder="Lat" 
                             value={inputLat}
                             onChange={(e) => setInputLat(e.target.value)}
-                            className="bg-slate-900 text-white text-xs px-2 py-1 rounded border border-white/10 w-20 text-center outline-none focus:border-emerald-500"
+                            className="bg-slate-900 text-white text-xs px-2 py-1 rounded border border-white/10 w-20 text-center outline-none focus:border-emerald-500 select-text pointer-events-auto"
                           />
                           <input 
                             type="text" 
                             placeholder="Lon" 
                             value={inputLon}
                             onChange={(e) => setInputLon(e.target.value)}
-                            className="bg-slate-900 text-white text-xs px-2 py-1 rounded border border-white/10 w-20 text-center outline-none focus:border-emerald-500"
+                            className="bg-slate-900 text-white text-xs px-2 py-1 rounded border border-white/10 w-20 text-center outline-none focus:border-emerald-500 select-text pointer-events-auto"
                           />
                           <button 
                             type="button"
