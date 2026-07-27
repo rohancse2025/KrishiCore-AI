@@ -13,7 +13,7 @@ This is our final year college project. It is a system built to help farmers mon
 * `frontend/` - React app with Vite and Tailwind. Contains UI screens for chat, weather, market prices, and profile.
 * `backend/` - FastAPI server files. Contains our ML model (`model.pkl`) and API routes.
 * `iot/` - Code for the ESP32 microcontroller.
-* `docs/` - Our project submission reports, PPT slides layout, and demo video script.
+* `docs/` - Our project submission reports, PPT slides layout.
 
 ---
 
@@ -62,5 +62,4 @@ Open the ESP32 code located in `iot/firmware/KisanCore_ESP32/KisanCore_ESP32.ino
 Our project report, presentation slides guidelines, and video demo guide are all organized inside the `docs/` folder:
 * **Project Report**: [docs/report/README.md](./docs/report/README.md)
 * **Presentation Slides Layout**: [docs/presentation/README.md](./docs/presentation/README.md)
-* **Demo Video Script**: [docs/videos/README.md](./docs/videos/README.md)
-* **Demo Checklist**: [docs/assets/krishicore-demo-checklist.pdf](./docs/assets/krishicore-demo-checklist.pdf)
+
