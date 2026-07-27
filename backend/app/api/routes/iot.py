@@ -262,6 +262,21 @@ def get_tile_coords(lat: float, lon: float, zoom: int = 16):
     y = int((1.0 - math.log(math.tan(lat_rad) + (1.0 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
     return x, y
 
+def get_simulated_metrics(lat: float, lon: float):
+    import hashlib
+    coord_str = f"{lat:.4f},{lon:.4f}".encode()
+    hash_hex = hashlib.md5(coord_str).hexdigest()
+    seed = int(hash_hex[:6], 16)
+    
+    # Deterministic NDVI between 0.38 and 0.82
+    ndvi_val = round(0.38 + (seed % 45) / 100.0, 2)
+    # Deterministic moisture between 0.22 and 0.67
+    moisture_val = round(0.22 + (seed % 46) / 100.0, 2)
+    # Deterministic cloud cover between 0% and 12%
+    cl_val = round((seed % 13) * 1.0, 1)
+    
+    return ndvi_val, moisture_val, cl_val
+
 def get_or_create_polygon(api_key: str, lat: float, lon: float) -> str:
     cache_key = (round(lat, 3), round(lon, 3))
     if cache_key in POLYGON_CACHE:
@@ -333,6 +348,9 @@ async def get_satellite_data(lat: float, lon: float):
     tile_x, tile_y = get_tile_coords(lat, lon, zoom=18)
     esri_satellite_url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/18/{tile_y}/{tile_x}"
     
+    # Calculate deterministic simulated readings unique to this coordinate
+    sim_ndvi, sim_moisture, sim_cl = get_simulated_metrics(lat, lon)
+    
     api_key = os.environ.get("OPENWEATHER_API_KEY", "").strip()
     if not api_key:
         # Keyless fallback: return Esri satellite map and dynamic simulated NDVI index
@@ -340,9 +358,9 @@ async def get_satellite_data(lat: float, lon: float):
             "is_fallback": True,
             "ndvi_image": esri_satellite_url,
             "truecolor_image": esri_satellite_url,
-            "ndvi_index": 0.74,
-            "moisture_index": 0.45,
-            "cloud_cover": 0.0,
+            "ndvi_index": sim_ndvi,
+            "moisture_index": sim_moisture,
+            "cloud_cover": sim_cl,
             "satellite_name": "Sentinel-2 L2A (Esri)",
             "pass_date": datetime.now(IST).strftime("%B %d, %Y"),
             "lat": lat,
@@ -356,9 +374,9 @@ async def get_satellite_data(lat: float, lon: float):
             "is_fallback": True,
             "ndvi_image": esri_satellite_url,
             "truecolor_image": esri_satellite_url,
-            "ndvi_index": 0.74,
-            "moisture_index": 0.45,
-            "cloud_cover": 0.0,
+            "ndvi_index": sim_ndvi,
+            "moisture_index": sim_moisture,
+            "cloud_cover": sim_cl,
             "satellite_name": "Sentinel-2 L2A (Esri)",
             "pass_date": datetime.now(IST).strftime("%B %d, %Y"),
             "lat": lat,
@@ -383,10 +401,10 @@ async def get_satellite_data(lat: float, lon: float):
                     truecolor_img = latest["image"].get("truecolor", esri_satellite_url)
                     
                     # Fetch NDVI statistics
-                    ndvi_val = 0.74
+                    ndvi_val = sim_ndvi
                     if "stats" in latest:
-                        ndvi_val = round(latest.get("stats", {}).get("ndvi", 0.74), 2)
-                        if ndvi_val <= 0: ndvi_val = 0.74
+                        ndvi_val = round(latest.get("stats", {}).get("ndvi", sim_ndvi), 2)
+                        if ndvi_val <= 0: ndvi_val = sim_ndvi
                     
                     pass_dt = datetime.fromtimestamp(latest["dt"], IST).strftime("%B %d, %Y")
                     
@@ -395,7 +413,7 @@ async def get_satellite_data(lat: float, lon: float):
                         "ndvi_image": ndvi_img,
                         "truecolor_image": truecolor_img,
                         "ndvi_index": ndvi_val,
-                        "moisture_index": 0.45,
+                        "moisture_index": sim_moisture,
                         "cloud_cover": round(latest.get("cl", 0.0), 1),
                         "satellite_name": "Sentinel-2 L2A",
                         "pass_date": pass_dt,
@@ -410,9 +428,9 @@ async def get_satellite_data(lat: float, lon: float):
         "is_fallback": True,
         "ndvi_image": esri_satellite_url,
         "truecolor_image": esri_satellite_url,
-        "ndvi_index": 0.74,
-        "moisture_index": 0.45,
-        "cloud_cover": 0.0,
+        "ndvi_index": sim_ndvi,
+        "moisture_index": sim_moisture,
+        "cloud_cover": sim_cl,
         "satellite_name": "Sentinel-2 L2A (Esri)",
         "pass_date": datetime.now(IST).strftime("%B %d, %Y"),
         "lat": lat,
