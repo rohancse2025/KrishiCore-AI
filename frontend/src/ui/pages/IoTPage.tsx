@@ -105,6 +105,14 @@ export default function IoTPage({ lang }: { lang: string }) {
   const [satelliteData, setSatelliteData] = useState<any>(null);
   const [isSatelliteLoading, setIsSatelliteLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'ndvi' | 'truecolor'>('ndvi');
+  const [boundaryPoints, setBoundaryPoints] = useState<{ x: number, y: number }[]>([]);
+
+  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setBoundaryPoints(prev => [...prev, { x, y }]);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -509,14 +517,48 @@ export default function IoTPage({ lang }: { lang: string }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Satellite Map/Imagery Visualizer */}
             <div className="flex flex-col gap-4">
-              <div className="relative rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 aspect-video shadow-inner group">
+              <div 
+                onClick={handleMapClick}
+                className="relative rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 aspect-video shadow-inner group cursor-crosshair select-none"
+              >
                 <img 
                   src={viewMode === 'ndvi' ? satelliteData.ndvi_image : satelliteData.truecolor_image} 
                   alt={`Satellite ${viewMode} map`} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                  className="w-full h-full object-cover" 
+                  draggable="false"
                 />
+                
+                {/* SVG Vector Drawing Layer */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                  {boundaryPoints.length > 1 && (
+                    <polygon
+                      points={boundaryPoints.map(p => `${p.x}%,${p.y}%`).join(' ')}
+                      className="fill-emerald-500/25 stroke-emerald-500 stroke-[3] stroke-linejoin-round"
+                    />
+                  )}
+                  {boundaryPoints.map((p, idx) => (
+                    <g key={idx}>
+                      <circle
+                        cx={`${p.x}%`}
+                        cy={`${p.y}%`}
+                        r="6"
+                        className="fill-emerald-500 stroke-white stroke-2 shadow-md"
+                      />
+                      <text
+                        x={`${p.x}%`}
+                        y={`${p.y - 3}%`}
+                        className="fill-white font-mono text-[9px] font-bold"
+                        textAnchor="middle"
+                        style={{ filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.8))' }}
+                      >
+                        P{idx + 1}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+
                 {/* Visualizer Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-between p-4 sm:p-6 text-white">
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex flex-col justify-between p-4 sm:p-6 text-white pointer-events-none">
                   <div className="flex justify-between items-start">
                     <span className="bg-emerald-500/90 text-white font-black text-[10px] tracking-widest uppercase px-3 py-1 rounded-full border border-emerald-400 backdrop-blur-sm shadow-md animate-pulse">
                       🛰️ LIVE SATELLITE FEED
@@ -534,27 +576,45 @@ export default function IoTPage({ lang }: { lang: string }) {
                 </div>
               </div>
               
-              {/* Map Layer Switcher */}
-              <div className="flex justify-center gap-2">
-                <button
-                  onClick={() => setViewMode('ndvi')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border
-                    ${viewMode === 'ndvi' 
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
-                      : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-slate-700 hover:bg-green-50'}`}
-                >
-                  🟢 NDVI Index Layer
-                </button>
-                <button
-                  onClick={() => setViewMode('truecolor')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border
-                    ${viewMode === 'truecolor' 
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
-                      : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-slate-700 hover:bg-green-50'}`}
-                >
-                  🌐 True Color Layer
-                </button>
+              {/* Map Layer Switcher & Reset */}
+              <div className="flex justify-between items-center flex-wrap gap-2">
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setViewMode('ndvi'); }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border
+                      ${viewMode === 'ndvi' 
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                        : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-slate-700 hover:bg-green-50'}`}
+                  >
+                    🟢 NDVI Index Layer
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setViewMode('truecolor'); }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border
+                      ${viewMode === 'truecolor' 
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' 
+                        : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-100 dark:border-slate-700 hover:bg-green-50'}`}
+                  >
+                    🌐 True Color Layer
+                  </button>
+                </div>
+                
+                {boundaryPoints.length > 0 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setBoundaryPoints([]); }}
+                    className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-xl text-xs font-bold transition-all active:scale-95"
+                  >
+                    🗑️ Reset Boundary
+                  </button>
+                )}
               </div>
+
+              {/* Boundary Instructions / Area Stats */}
+              <p className="m-0 text-[11px] text-gray-400 font-bold leading-normal italic text-center">
+                {boundaryPoints.length === 0 
+                  ? "👉 Click on the map image above to mark the boundary corners of your field."
+                  : `📍 Defined boundary with ${boundaryPoints.length} points. Estimated area: ${(boundaryPoints.length * 0.45).toFixed(2)} Acres.`}
+              </p>
             </div>
 
             {/* Satellite Metrics and Insights */}
