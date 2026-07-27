@@ -107,6 +107,33 @@ export default function IoTPage({ lang }: { lang: string }) {
   const [viewMode, setViewMode] = useState<'ndvi' | 'truecolor'>('ndvi');
   const [boundaryPoints, setBoundaryPoints] = useState<{ x: number, y: number }[]>([]);
 
+  // Coordinate states & editing states
+  const [farmCoords, setFarmCoords] = useState<{ lat: number, lon: number } | null>(() => {
+    try {
+      const saved = localStorage.getItem('KrishiCore_farm_coords');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [isEditingCoords, setIsEditingCoords] = useState(false);
+  const [inputLat, setInputLat] = useState("");
+  const [inputLon, setInputLon] = useState("");
+
+  const handleSaveCoords = () => {
+    const latNum = parseFloat(inputLat);
+    const lonNum = parseFloat(inputLon);
+    if (!isNaN(latNum) && !isNaN(lonNum)) {
+      const coords = { lat: latNum, lon: lonNum };
+      setFarmCoords(coords);
+      localStorage.setItem('KrishiCore_farm_coords', JSON.stringify(coords));
+      setBoundaryPoints([]); // reset boundary points for new location
+      setIsEditingCoords(false);
+    } else {
+      alert("Please enter valid decimal coordinates (e.g. lat: 13.1056, lon: 77.3827).");
+    }
+  };
+
   const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -116,28 +143,14 @@ export default function IoTPage({ lang }: { lang: string }) {
 
   useEffect(() => {
     let isMounted = true;
-    const loadCoordsAndSatellite = async () => {
+    
+    const fetchSatellite = async (lat: number, lon: number) => {
       setIsSatelliteLoading(true);
-      let useLat = 15.3647;
-      let useLon = 75.6403;
-      
-      if (navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 4000 });
-          });
-          useLat = pos.coords.latitude;
-          useLon = pos.coords.longitude;
-        } catch (err) {
-          console.warn("Geolocation failed, using default coords");
-        }
-      }
-      
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/iot/satellite?lat=${useLat}&lon=${useLon}`);
-        if (res.ok) {
+        const res = await fetch(`${API_BASE_URL}/api/v1/iot/satellite?lat=${lat}&lon=${lon}`);
+        if (res.ok && isMounted) {
           const data = await res.json();
-          if (isMounted) setSatelliteData(data);
+          setSatelliteData(data);
         }
       } catch (e) {
         console.error("Error loading satellite data", e);
@@ -145,10 +158,40 @@ export default function IoTPage({ lang }: { lang: string }) {
         if (isMounted) setIsSatelliteLoading(false);
       }
     };
-    
-    loadCoordsAndSatellite();
+
+    if (farmCoords) {
+      fetchSatellite(farmCoords.lat, farmCoords.lon);
+    } else {
+      // Fetch user's current GPS location (with high accuracy priority)
+      const loadCoords = async () => {
+        let useLat = 15.3647;
+        let useLon = 75.6403;
+        if (navigator.geolocation) {
+          try {
+            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 0
+              });
+            });
+            useLat = pos.coords.latitude;
+            useLon = pos.coords.longitude;
+          } catch (err) {
+            console.warn("Geolocation failed, using default coords");
+          }
+        }
+        const coords = { lat: useLat, lon: useLon };
+        if (isMounted) {
+          setFarmCoords(coords);
+          localStorage.setItem('KrishiCore_farm_coords', JSON.stringify(coords));
+        }
+      };
+      loadCoords();
+    }
+
     return () => { isMounted = false; };
-  }, []);
+  }, [farmCoords]);
 
   const handleOverride = async (command: string) => {
     setIsSendingOverride(true);
@@ -569,9 +612,77 @@ export default function IoTPage({ lang }: { lang: string }) {
                   </div>
                   <div>
                     <p className="m-0 text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Field Coordinates</p>
-                    <h4 className="m-0 text-xs sm:text-sm font-mono font-bold text-emerald-400">
-                      {satelliteData.lat.toFixed(4)}° N, {satelliteData.lon.toFixed(4)}° E (Live Field)
-                    </h4>
+                    {isEditingCoords ? (
+                      <div className="flex gap-2 items-center flex-wrap mt-1">
+                        <input 
+                          type="text" 
+                          placeholder="Lat" 
+                          value={inputLat}
+                          onChange={(e) => setInputLat(e.target.value)}
+                          className="bg-slate-900/90 text-white text-xs px-2 py-1 rounded border border-white/20 w-16 pointer-events-auto text-center"
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Lon" 
+                          value={inputLon}
+                          onChange={(e) => setInputLon(e.target.value)}
+                          className="bg-slate-900/90 text-white text-xs px-2 py-1 rounded border border-white/20 w-16 pointer-events-auto text-center"
+                        />
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleSaveCoords(); }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-2 py-1 rounded pointer-events-auto active:scale-95 transition-all"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (navigator.geolocation) {
+                              try {
+                                const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+                                  navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                    enableHighAccuracy: true,
+                                    timeout: 8000,
+                                    maximumAge: 0
+                                  });
+                                });
+                                setInputLat(pos.coords.latitude.toFixed(6));
+                                setInputLon(pos.coords.longitude.toFixed(6));
+                              } catch (err) {
+                                alert("Failed to fetch GPS coordinates. Please type manually.");
+                              }
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold px-2 py-1 rounded pointer-events-auto active:scale-95 transition-all"
+                          title="Get Current GPS Coordinates"
+                        >
+                          📍 GPS
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setIsEditingCoords(false); }}
+                          className="bg-slate-700 hover:bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded pointer-events-auto active:scale-95 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-1">
+                        <h4 className="m-0 text-xs sm:text-sm font-mono font-bold text-emerald-400">
+                          {satelliteData.lat.toFixed(4)}° N, {satelliteData.lon.toFixed(4)}° E (Live Field)
+                        </h4>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInputLat(satelliteData.lat.toFixed(6));
+                            setInputLon(satelliteData.lon.toFixed(6));
+                            setIsEditingCoords(true);
+                          }}
+                          className="bg-white/15 hover:bg-white/25 text-white border-none rounded px-2.5 py-1 text-[10px] font-bold pointer-events-auto cursor-pointer transition-all active:scale-95"
+                        >
+                          ✏️ Edit Location
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
