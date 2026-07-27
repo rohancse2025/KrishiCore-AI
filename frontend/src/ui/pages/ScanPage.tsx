@@ -144,8 +144,12 @@ export default function ScanPage({ lang }: { lang: string }) {
       
       const visionData = await visionRes.json();
       
-      // Parse AI response
-      const match = visionData.reply.match(/\{[\s\S]*\}/);
+      // Parse AI response (clean up any <think> reasoning blocks first)
+      let cleanReply = visionData.reply || "";
+      cleanReply = cleanReply.replace(/<think>[\s\S]*?<\/think>/gi, "");
+      cleanReply = cleanReply.replace(/<think>[\s\S]*/gi, "").trim();
+
+      const match = cleanReply.match(/\{[\s\S]*\}/);
       if (!match) throw new Error("AI did not return a valid JSON object");
       const aiResult = JSON.parse(match[0]);
       

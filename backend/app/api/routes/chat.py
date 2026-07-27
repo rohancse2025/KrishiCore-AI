@@ -82,10 +82,16 @@ async def chat_endpoint(request: ChatRequest):
             response = client.chat.completions.create(
                 model=model,
                 messages=messages,
-                max_tokens=500 if request.image else 300,
+                max_tokens=2048 if request.image else 300,
                 temperature=0.0,
             )
-            return ChatResponse(reply=response.choices[0].message.content)
+            reply = response.choices[0].message.content
+            if reply:
+                import re
+                # Strip <think>...</think> block if present (common in reasoning models like Qwen)
+                reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL)
+                reply = re.sub(r'<think>.*', '', reply, flags=re.DOTALL).strip()
+            return ChatResponse(reply=reply)
 
         except Exception as e:
             error_str = str(e)
