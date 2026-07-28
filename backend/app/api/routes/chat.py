@@ -89,7 +89,7 @@ async def chat_endpoint(request: ChatRequest):
             response = client.chat.completions.create(
                 model=model,
                 messages=messages,
-                max_tokens=2048 if request.image else 300,
+                max_tokens=500 if request.image else 300,
                 temperature=0.0,
                 **extra_params
             )
@@ -117,7 +117,7 @@ async def chat_endpoint(request: ChatRequest):
             is_rate_limit = "rate_limit_exceeded" in error_str.lower() or "429" in error_str
             
             if is_rate_limit and attempt == 0:
-                await asyncio.sleep(2)
+                await asyncio.sleep(3)
                 continue
                 
             if is_rate_limit:
