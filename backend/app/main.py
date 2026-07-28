@@ -28,7 +28,7 @@ from app.database import engine, Base
 @app.on_event("startup")
 def create_tables():
     Base.metadata.create_all(bind=engine)
-    print("✅ Database tables created/verified")
+    print("Database tables created/verified")
 
 
 

@@ -144,14 +144,50 @@ export default function ScanPage({ lang }: { lang: string }) {
       
       const visionData = await visionRes.json();
       
-      // Parse AI response (clean up any <think> reasoning blocks first)
-      let cleanReply = visionData.reply || "";
-      cleanReply = cleanReply.replace(/<think>[\s\S]*?<\/think>/gi, "");
-      cleanReply = cleanReply.replace(/<think>[\s\S]*/gi, "").trim();
+      // Parse AI response with multi-strategy JSON extractor
+      const cleanReply = visionData.reply || "";
+      let aiResult: any = null;
 
-      const match = cleanReply.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("AI did not return a valid JSON object");
-      const aiResult = JSON.parse(match[0]);
+      // Strategy 1: Try to extract and parse JSON directly from raw reply first
+      const firstMatch = cleanReply.match(/\{[\s\S]*\}/);
+      if (firstMatch) {
+        try {
+          aiResult = JSON.parse(firstMatch[0]);
+        } catch (e) {
+          // Parsing raw JSON block failed
+        }
+      }
+
+      // Strategy 2: If Strategy 1 failed, strip think blocks and try parsing again
+      if (!aiResult) {
+        let stripped = cleanReply.replace(/<think>[\s\S]*?<\/think>/gi, "");
+        stripped = stripped.replace(/<think>[\s\S]*/gi, "").trim();
+        const secondMatch = stripped.match(/\{[\s\S]*\}/);
+        if (secondMatch) {
+          try {
+            aiResult = JSON.parse(secondMatch[0]);
+          } catch (e) {
+            // Parsing stripped JSON block failed
+          }
+        }
+      }
+
+      // Strategy 3: Try to find and slice the last {...} block (usually the final answer block)
+      if (!aiResult) {
+        const lastOpenBrace = cleanReply.lastIndexOf('{');
+        const lastCloseBrace = cleanReply.lastIndexOf('}');
+        if (lastOpenBrace !== -1 && lastCloseBrace !== -1 && lastOpenBrace < lastCloseBrace) {
+          try {
+            aiResult = JSON.parse(cleanReply.slice(lastOpenBrace, lastCloseBrace + 1));
+          } catch (e) {
+            // Slicing last braces failed
+          }
+        }
+      }
+
+      if (!aiResult) {
+        throw new Error("AI did not return a valid JSON object");
+      }
       
       setResult({
         disease: aiResult.disease || "Unknown Disease",

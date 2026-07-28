@@ -55,10 +55,15 @@ async def chat_endpoint(request: ChatRequest):
             client = Groq(api_key=api_key)
 
             messages = []
+            extra_params = {}
             
             # Use vision model if image is present
             if request.image:
                 model = "qwen/qwen3.6-27b" 
+                messages.append({
+                    "role": "system",
+                    "content": "You are a helpful agricultural assistant that always outputs responses in raw JSON format as requested."
+                })
                 messages.append({
                     "role": "user",
                     "content": [
@@ -71,6 +76,7 @@ async def chat_endpoint(request: ChatRequest):
                         },
                     ],
                 })
+                extra_params["response_format"] = {"type": "json_object"}
             else:
                 model = "llama-3.3-70b-versatile"
                 messages.append({"role": "system", "content": SYSTEM_PROMPT})
@@ -84,13 +90,25 @@ async def chat_endpoint(request: ChatRequest):
                 messages=messages,
                 max_tokens=2048 if request.image else 300,
                 temperature=0.0,
+                **extra_params
             )
             reply = response.choices[0].message.content
             if reply:
                 import re
-                # Strip <think>...</think> block if present (common in reasoning models like Qwen)
-                reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL)
-                reply = re.sub(r'<think>.*', '', reply, flags=re.DOTALL).strip()
+                # Try to extract valid JSON directly first for JSON assistant outputs
+                if request.image or (extra_params.get("response_format") and extra_params["response_format"].get("type") == "json_object"):
+                    json_match = re.search(r'\{[\s\S]*\}', reply)
+                    if json_match:
+                        try:
+                            json.loads(json_match.group(0))
+                            reply = json_match.group(0)
+                        except Exception:
+                            pass
+                
+                if reply and not (reply.startswith("{") and reply.endswith("}")):
+                    # Strip <think>...</think> block if present (common in reasoning models like Qwen)
+                    reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL)
+                    reply = re.sub(r'<think>.*', '', reply, flags=re.DOTALL).strip()
             return ChatResponse(reply=reply)
 
         except Exception as e:
