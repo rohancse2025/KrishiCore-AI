@@ -89,7 +89,7 @@ async def chat_endpoint(request: ChatRequest):
             response = client.chat.completions.create(
                 model=model,
                 messages=messages,
-                max_tokens=500 if request.image else 300,
+                max_tokens=250 if request.image else 300,
                 temperature=0.0,
                 **extra_params
             )
