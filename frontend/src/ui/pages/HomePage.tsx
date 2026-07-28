@@ -188,7 +188,11 @@ export default function HomePage({ lang }: { lang: string }) {
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+        (pos) => {
+          const freshCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          setCoords(freshCoords);
+          localStorage.setItem('KrishiCore_farm_coords', JSON.stringify(freshCoords));
+        },
         () => {
           if (!coords) setCoords({ lat: 30.9010, lon: 75.8573 });
         },
@@ -425,6 +429,25 @@ export default function HomePage({ lang }: { lang: string }) {
         setMarketRegion(state);
         setMarketDistrict(district);
         setLocationSource('Profile');
+
+        // Geocode profile location to sync coordinates
+        (async () => {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(farmer.location)}&format=json&limit=1`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+              const latNum = parseFloat(data[0].lat);
+              const lonNum = parseFloat(data[0].lon);
+              if (!coords || Math.abs(coords.lat - latNum) > 0.01 || Math.abs(coords.lon - lonNum) > 0.01) {
+                const newCoords = { lat: latNum, lon: lonNum };
+                setCoords(newCoords);
+                localStorage.setItem('KrishiCore_farm_coords', JSON.stringify(newCoords));
+              }
+            }
+          } catch (e) {
+            console.error("Geocoding profile failed on mount", e);
+          }
+        })();
         return;
       }
 
@@ -457,6 +480,25 @@ export default function HomePage({ lang }: { lang: string }) {
         setMarketRegion(state);
         setMarketDistrict(district);
         setLocationSource('Profile');
+
+        // Geocode profile location fallback to sync coordinates
+        (async () => {
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(farmer.location)}&format=json&limit=1`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+              const latNum = parseFloat(data[0].lat);
+              const lonNum = parseFloat(data[0].lon);
+              if (!coords || Math.abs(coords.lat - latNum) > 0.01 || Math.abs(coords.lon - lonNum) > 0.01) {
+                const newCoords = { lat: latNum, lon: lonNum };
+                setCoords(newCoords);
+                localStorage.setItem('KrishiCore_farm_coords', JSON.stringify(newCoords));
+              }
+            }
+          } catch (e) {
+            console.error("Geocoding profile failed on fallback", e);
+          }
+        })();
       } else {
         setMarketRegion('Punjab');
         setMarketDistrict('Ludhiana');
@@ -830,7 +872,7 @@ export default function HomePage({ lang }: { lang: string }) {
                       📍 {marketDistrict}, {marketRegion}
                       {locationSource === 'GPS' && (
                         <button 
-                          onClick={() => {
+                          onClick={async () => {
                             const parts = (farmer?.location || 'Ludhiana, Punjab').split(',');
                             const city = parts[0]?.trim() || 'Ludhiana';
                             const state = parts.length > 1 ? parts[1].trim() : city;
@@ -838,6 +880,21 @@ export default function HomePage({ lang }: { lang: string }) {
                             setMarketDistrict(city);
                             setLocationSource('Profile');
                             localStorage.setItem('preferred_location_source', 'Profile');
+
+                            // Geocode profile location to sync coordinates
+                            try {
+                              const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(farmer?.location || 'Ludhiana, Punjab')}&format=json&limit=1`);
+                              const data = await res.json();
+                              if (data && data.length > 0) {
+                                const latNum = parseFloat(data[0].lat);
+                                const lonNum = parseFloat(data[0].lon);
+                                const newCoords = { lat: latNum, lon: lonNum };
+                                setCoords(newCoords);
+                                localStorage.setItem('KrishiCore_farm_coords', JSON.stringify(newCoords));
+                              }
+                            } catch (e) {
+                              console.error("Geocoding profile failed on click", e);
+                            }
                           }}
                           className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full not-italic hover:bg-blue-200 transition-all font-black uppercase"
                         >
