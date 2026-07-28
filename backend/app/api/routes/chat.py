@@ -77,6 +77,7 @@ async def chat_endpoint(request: ChatRequest):
                     ],
                 })
                 extra_params["response_format"] = {"type": "json_object"}
+                extra_params["reasoning_format"] = "hidden"
             else:
                 model = "llama-3.3-70b-versatile"
                 messages.append({"role": "system", "content": SYSTEM_PROMPT})
