@@ -62,7 +62,40 @@ export default function ScanPage({ lang }: { lang: string }) {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target?.result as string);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1024;
+        const MAX_HEIGHT = 1024;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setPreview(compressedDataUrl);
+        } else {
+          setPreview(e.target?.result as string);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
     reader.readAsDataURL(file);
     setResult(null);
   };
@@ -107,7 +140,7 @@ export default function ScanPage({ lang }: { lang: string }) {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60s for vision
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // Increased to 120s for Render cold start & processing
 
     try {
       // 1. Send image to Groq Vision API for detection
